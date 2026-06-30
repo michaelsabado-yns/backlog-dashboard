@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .backlog-markdown {
+        @apply text-sm leading-relaxed text-gray-800;
+    }
+
+    .backlog-markdown--compact {
+        @apply line-clamp-2 text-xs text-gray-500;
+    }
+
+    .backlog-markdown--full {
+        @apply space-y-3;
+    }
+
+    .backlog-markdown :where(h1, h2, h3, h4) {
+        @apply font-semibold text-gray-900;
+    }
+
+    .backlog-markdown :where(h1) {
+        @apply text-xl;
+    }
+
+    .backlog-markdown :where(h2) {
+        @apply text-lg;
+    }
+
+    .backlog-markdown :where(h3, h4) {
+        @apply text-base;
+    }
+
+    .backlog-markdown :where(p, ul, ol, blockquote, pre) {
+        @apply text-gray-700;
+    }
+
+    .backlog-markdown :where(ul, ol) {
+        @apply list-inside list-disc space-y-1 ps-2;
+    }
+
+    .backlog-markdown :where(ol) {
+        @apply list-decimal;
+    }
+
+    .backlog-markdown :where(blockquote) {
+        @apply rounded-md border-s-4 border-gray-200 bg-gray-50 px-4 py-3 text-gray-600;
+    }
+
+    .backlog-markdown :where(a) {
+        @apply break-all font-medium text-indigo-600 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-500;
+    }
+
+    .backlog-markdown :where(code) {
+        @apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-800;
+    }
+
+    .backlog-markdown :where(pre) {
+        @apply overflow-x-auto rounded-lg bg-gray-900 p-4 text-gray-100;
+    }
+
+    .backlog-markdown :where(pre code) {
+        @apply bg-transparent p-0 text-inherit;
+    }
+
+    .backlog-markdown :where(hr) {
+        @apply border-gray-200;
+    }
+
+    .backlog-markdown :where(.backlog-mention) {
+        @apply rounded bg-indigo-50 px-1 font-medium text-indigo-700;
+    }
+}
