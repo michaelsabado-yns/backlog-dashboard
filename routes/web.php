@@ -32,7 +32,7 @@ Route::get('/test-backlog', function (
     return $service->getNotifications();
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware([])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');
     Route::get('/notifications/{id}', [NotificationController::class, 'show'])
