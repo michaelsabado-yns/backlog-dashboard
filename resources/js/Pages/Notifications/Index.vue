@@ -2,7 +2,7 @@
 import NotificationFilters from '@/Components/Notifications/NotificationFilters.vue';
 import NotificationStats from '@/Components/Notifications/NotificationStats.vue';
 import NotificationTable from '@/Components/Notifications/NotificationTable.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -98,7 +98,7 @@ const refreshNotifications = () => {
 <template>
   <Head title="Backlog Notification Dashboard" />
 
-  <AuthenticatedLayout>
+  <PublicLayout>
     <template #header>
       <h2 class="text-xl font-semibold leading-tight text-gray-800">
         Backlog Notification Dashboard
@@ -139,5 +139,5 @@ const refreshNotifications = () => {
         <NotificationTable :notifications="filteredNotifications" />
       </div>
     </div>
-  </AuthenticatedLayout>
+  </PublicLayout>
 </template>

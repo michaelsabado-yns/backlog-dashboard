@@ -1,6 +1,6 @@
 <script setup>
 import BacklogMarkdown from '@/Components/Notifications/BacklogMarkdown.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 /**
@@ -35,7 +35,7 @@ const formatDate = (isoString) => {
 <template>
   <Head :title="`${notification.issue_key ?? 'Notification'} · Backlog`" />
 
-  <AuthenticatedLayout>
+  <PublicLayout>
     <template #header>
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -108,5 +108,5 @@ const formatDate = (isoString) => {
         </div>
       </div>
     </div>
-  </AuthenticatedLayout>
+  </PublicLayout>
 </template>
