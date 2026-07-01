@@ -153,20 +153,18 @@ const openInBacklog = (notification) => {
               class="px-4 py-3 text-sm text-gray-700"
               :class="{ 'font-semibold text-gray-900': !notification.isRead }"
             >
-              <div class="flex items-start gap-2">
+              <div class="space-y-1.5">
                 <IssueStatusBadge
                   :status="notification.issue_status"
                   :color="notification.issue_status_color"
                 />
-                <div class="min-w-0 flex-1">
-                  <p class="line-clamp-2">{{ notification.summary }}</p>
-                  <p
-                    v-if="notification.content"
-                    class="mt-1 line-clamp-2 text-xs text-gray-500"
-                  >
-                    {{ previewBacklogMarkdown(notification.content) }}
-                  </p>
-                </div>
+                <p class="line-clamp-2">{{ notification.summary }}</p>
+                <p
+                  v-if="notification.content"
+                  class="line-clamp-2 text-xs text-gray-500"
+                >
+                  {{ previewBacklogMarkdown(notification.content) }}
+                </p>
               </div>
             </td>
             <td
