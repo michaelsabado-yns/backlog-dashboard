@@ -1,4 +1,5 @@
 <script setup>
+import IssueStatusBadge from '@/Components/Notifications/IssueStatusBadge.vue';
 import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import { previewBacklogMarkdown } from '@/utils/backlogMarkdown';
 import { Link } from '@inertiajs/vue3';
@@ -152,13 +153,21 @@ const openInBacklog = (notification) => {
               class="px-4 py-3 text-sm text-gray-700"
               :class="{ 'font-semibold text-gray-900': !notification.isRead }"
             >
-              <p class="line-clamp-2">{{ notification.summary }}</p>
-              <p
-                v-if="notification.content"
-                class="mt-1 line-clamp-2 text-xs text-gray-500"
-              >
-                {{ previewBacklogMarkdown(notification.content) }}
-              </p>
+              <div class="flex items-start gap-2">
+                <IssueStatusBadge
+                  :status="notification.issue_status"
+                  :color="notification.issue_status_color"
+                />
+                <div class="min-w-0 flex-1">
+                  <p class="line-clamp-2">{{ notification.summary }}</p>
+                  <p
+                    v-if="notification.content"
+                    class="mt-1 line-clamp-2 text-xs text-gray-500"
+                  >
+                    {{ previewBacklogMarkdown(notification.content) }}
+                  </p>
+                </div>
+              </div>
             </td>
             <td
               class="whitespace-nowrap px-4 py-3 text-sm text-gray-700"

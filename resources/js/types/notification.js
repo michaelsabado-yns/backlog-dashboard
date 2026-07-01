@@ -8,6 +8,8 @@
  * @property {string} type
  * @property {string|null} content
  * @property {string|null} created_at
+ * @property {string|null} issue_status
+ * @property {string|null} issue_status_color
  * @property {string|null} backlog_url
  */
 

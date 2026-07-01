@@ -1,5 +1,6 @@
 <script setup>
 import BacklogMarkdown from '@/Components/Notifications/BacklogMarkdown.vue';
+import IssueStatusBadge from '@/Components/Notifications/IssueStatusBadge.vue';
 import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
@@ -76,9 +77,15 @@ const formatDate = (isoString) => {
               >
                 {{ notification.type }}
               </span>
-              <h3 class="text-lg font-semibold text-gray-900">
-                {{ notification.summary }}
-              </h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <IssueStatusBadge
+                  :status="notification.issue_status"
+                  :color="notification.issue_status_color"
+                />
+                <h3 class="text-lg font-semibold text-gray-900">
+                  {{ notification.summary }}
+                </h3>
+              </div>
               <p class="text-sm text-gray-500">
                 From
                 <span class="font-medium text-gray-700">

@@ -8,8 +8,8 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
  * @property {number} unreadCount
  * @property {number} readCount
  * @property {string} refreshedAt
- * @property {string} cacheExpiresAt
- * @property {boolean} cacheIsValid
+ * @property {number} backlogUnreadCount
+ * @property {boolean} fromCache
  * @property {boolean} [refreshing]
  */
 
@@ -31,11 +31,11 @@ defineProps({
     type: String,
     required: true,
   },
-  cacheExpiresAt: {
-    type: String,
+  backlogUnreadCount: {
+    type: Number,
     required: true,
   },
-  cacheIsValid: {
+  fromCache: {
     type: Boolean,
     required: true,
   },
@@ -94,9 +94,15 @@ const formatTimestamp = (isoString) => {
             <span class="font-medium text-gray-700">
               {{ formatTimestamp(refreshedAt) }}
             </span>
+            <span v-if="fromCache" class="text-xs text-gray-400">
+              (cached)
+            </span>
           </p>
-          <p v-if="cacheIsValid" class="text-xs text-gray-400">
-            Cached until {{ formatTimestamp(cacheExpiresAt) }}
+          <p class="text-xs text-gray-400">
+            Backlog unread:
+            <span class="font-medium text-gray-600">
+              {{ backlogUnreadCount.toLocaleString() }}
+            </span>
           </p>
         </div>
 
@@ -112,16 +118,11 @@ const formatTimestamp = (isoString) => {
         <PrimaryButton
           type="button"
           class="justify-center"
-          :disabled="refreshing || cacheIsValid"
-          :title="
-            cacheIsValid
-              ? `Notifications are cached until ${formatTimestamp(cacheExpiresAt)}`
-              : undefined
-          "
+          :disabled="refreshing"
+          title="Force refresh from Backlog API"
           @click="$emit('refresh')"
         >
           <span v-if="refreshing">Refreshing…</span>
-          <span v-else-if="cacheIsValid">Cached</span>
           <span v-else>Refresh</span>
         </PrimaryButton>
       </div>

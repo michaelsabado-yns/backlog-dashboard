@@ -5,7 +5,7 @@ import NotificationTable from '@/Components/Notifications/NotificationTable.vue'
 import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 /**
  * @typedef {import('@/types/notification').Notification} Notification
@@ -16,7 +16,8 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
  * @property {Notification[]} notifications
  * @property {number} total_count
  * @property {string} refreshed_at
- * @property {string} cache_expires_at
+ * @property {number} backlog_unread_count
+ * @property {boolean} from_cache
  */
 
 /** @type {Props} */
@@ -33,33 +34,15 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  cache_expires_at: {
-    type: String,
+  backlog_unread_count: {
+    type: Number,
+    required: true,
+  },
+  from_cache: {
+    type: Boolean,
     required: true,
   },
 });
-
-const search = ref('');
-const selectedProject = ref('');
-const selectedType = ref('');
-const selectedReadStatus = ref('');
-const refreshing = ref(false);
-const now = ref(Date.now());
-let cacheExpiryTimer;
-
-onMounted(() => {
-  cacheExpiryTimer = window.setInterval(() => {
-    now.value = Date.now();
-  }, 1000);
-});
-
-onUnmounted(() => {
-  window.clearInterval(cacheExpiryTimer);
-});
-
-const cacheIsValid = computed(
-  () => now.value < new Date(props.cache_expires_at).getTime(),
-);
 
 const {
   readState,
@@ -69,6 +52,12 @@ const {
   getReadCount,
   cleanupReadState,
 } = useNotificationReadState();
+
+const search = ref('');
+const selectedProject = ref('');
+const selectedType = ref('');
+const selectedReadStatus = ref('');
+const refreshing = ref(false);
 
 watch(
   () => props.notifications,
@@ -141,6 +130,7 @@ const filteredNotifications = computed(() => {
       notification.summary,
       notification.sender,
       notification.content,
+      notification.issue_status,
     ]
       .filter(Boolean)
       .join(' ')
@@ -153,12 +143,24 @@ const filteredNotifications = computed(() => {
 const refreshNotifications = () => {
   refreshing.value = true;
 
-  router.reload({
-    only: ['notifications', 'total_count', 'refreshed_at', 'cache_expires_at'],
-    onFinish: () => {
-      refreshing.value = false;
+  router.get(
+    route('notifications.index'),
+    { force: 1 },
+    {
+      preserveState: true,
+      preserveScroll: true,
+      only: [
+        'notifications',
+        'total_count',
+        'refreshed_at',
+        'backlog_unread_count',
+        'from_cache',
+      ],
+      onFinish: () => {
+        refreshing.value = false;
+      },
     },
-  });
+  );
 };
 
 const handleMarkAllAsRead = () => {
@@ -183,8 +185,8 @@ const handleMarkAllAsRead = () => {
           :unread-count="notificationCounts.unread"
           :read-count="notificationCounts.read"
           :refreshed-at="refreshed_at"
-          :cache-expires-at="cache_expires_at"
-          :cache-is-valid="cacheIsValid"
+          :backlog-unread-count="backlog_unread_count"
+          :from-cache="from_cache"
           :refreshing="refreshing"
           @refresh="refreshNotifications"
           @mark-all-read="handleMarkAllAsRead"
