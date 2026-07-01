@@ -5,7 +5,7 @@ import NotificationTable from '@/Components/Notifications/NotificationTable.vue'
 import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 /**
  * @typedef {import('@/types/notification').Notification} Notification
@@ -16,6 +16,7 @@ import { computed, ref, watch } from 'vue';
  * @property {Notification[]} notifications
  * @property {number} total_count
  * @property {string} refreshed_at
+ * @property {string} cache_expires_at
  */
 
 /** @type {Props} */
@@ -32,7 +33,33 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  cache_expires_at: {
+    type: String,
+    required: true,
+  },
 });
+
+const search = ref('');
+const selectedProject = ref('');
+const selectedType = ref('');
+const selectedReadStatus = ref('');
+const refreshing = ref(false);
+const now = ref(Date.now());
+let cacheExpiryTimer;
+
+onMounted(() => {
+  cacheExpiryTimer = window.setInterval(() => {
+    now.value = Date.now();
+  }, 1000);
+});
+
+onUnmounted(() => {
+  window.clearInterval(cacheExpiryTimer);
+});
+
+const cacheIsValid = computed(
+  () => now.value < new Date(props.cache_expires_at).getTime(),
+);
 
 const {
   readState,
@@ -42,12 +69,6 @@ const {
   getReadCount,
   cleanupReadState,
 } = useNotificationReadState();
-
-const search = ref('');
-const selectedProject = ref('');
-const selectedType = ref('');
-const selectedReadStatus = ref('');
-const refreshing = ref(false);
 
 watch(
   () => props.notifications,
@@ -133,7 +154,7 @@ const refreshNotifications = () => {
   refreshing.value = true;
 
   router.reload({
-    only: ['notifications', 'total_count', 'refreshed_at'],
+    only: ['notifications', 'total_count', 'refreshed_at', 'cache_expires_at'],
     onFinish: () => {
       refreshing.value = false;
     },
@@ -162,6 +183,8 @@ const handleMarkAllAsRead = () => {
           :unread-count="notificationCounts.unread"
           :read-count="notificationCounts.read"
           :refreshed-at="refreshed_at"
+          :cache-expires-at="cache_expires_at"
+          :cache-is-valid="cacheIsValid"
           :refreshing="refreshing"
           @refresh="refreshNotifications"
           @mark-all-read="handleMarkAllAsRead"

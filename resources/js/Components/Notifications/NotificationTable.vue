@@ -119,7 +119,13 @@ const openInBacklog = (notification) => {
           >
             <td class="whitespace-nowrap px-4 py-3 text-sm">
               <span
-                v-if="!notification.isRead"
+                v-if="notification.isRead"
+                class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800"
+              >
+                Read
+              </span>
+              <span
+                v-else
                 class="inline-flex rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700"
               >
                 Unread

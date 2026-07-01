@@ -22,7 +22,8 @@ class NotificationController extends Controller
         return Inertia::render('Notifications/Index', [
             'notifications' => $notifications,
             'total_count' => count($notifications),
-            'refreshed_at' => now()->toIso8601String(),
+            'refreshed_at' => $backlogNotificationService->getLastFetchedAt(),
+            'cache_expires_at' => $backlogNotificationService->getCacheExpiresAt(),
         ]);
     }
 

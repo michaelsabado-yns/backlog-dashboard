@@ -8,6 +8,8 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
  * @property {number} unreadCount
  * @property {number} readCount
  * @property {string} refreshedAt
+ * @property {string} cacheExpiresAt
+ * @property {boolean} cacheIsValid
  * @property {boolean} [refreshing]
  */
 
@@ -27,6 +29,14 @@ defineProps({
   },
   refreshedAt: {
     type: String,
+    required: true,
+  },
+  cacheExpiresAt: {
+    type: String,
+    required: true,
+  },
+  cacheIsValid: {
+    type: Boolean,
     required: true,
   },
   refreshing: {
@@ -71,19 +81,24 @@ const formatTimestamp = (isoString) => {
 
         <div class="space-y-1">
           <p class="text-sm font-medium text-gray-500">Read notifications</p>
-          <p class="text-3xl font-semibold text-gray-700">
+          <p class="text-3xl font-semibold text-green-700">
             {{ readCount.toLocaleString() }}
           </p>
         </div>
       </div>
 
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <p class="text-sm text-gray-500 sm:mr-2">
-          Last refreshed:
-          <span class="font-medium text-gray-700">
-            {{ formatTimestamp(refreshedAt) }}
-          </span>
-        </p>
+        <div class="text-sm text-gray-500 sm:mr-2">
+          <p>
+            Last fetched:
+            <span class="font-medium text-gray-700">
+              {{ formatTimestamp(refreshedAt) }}
+            </span>
+          </p>
+          <p v-if="cacheIsValid" class="text-xs text-gray-400">
+            Cached until {{ formatTimestamp(cacheExpiresAt) }}
+          </p>
+        </div>
 
         <SecondaryButton
           type="button"
@@ -97,10 +112,16 @@ const formatTimestamp = (isoString) => {
         <PrimaryButton
           type="button"
           class="justify-center"
-          :disabled="refreshing"
+          :disabled="refreshing || cacheIsValid"
+          :title="
+            cacheIsValid
+              ? `Notifications are cached until ${formatTimestamp(cacheExpiresAt)}`
+              : undefined
+          "
           @click="$emit('refresh')"
         >
           <span v-if="refreshing">Refreshing…</span>
+          <span v-else-if="cacheIsValid">Cached</span>
           <span v-else>Refresh</span>
         </PrimaryButton>
       </div>
