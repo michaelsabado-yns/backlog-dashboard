@@ -3,7 +3,9 @@
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Services\BacklogNotificationService;
+use App\Support\BacklogApiKeyResolver;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -27,9 +29,16 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/test-backlog', function (
-    BacklogNotificationService $service
+    Request $request,
+    BacklogNotificationService $service,
 ) {
-    return $service->getNotifications();
+    $apiKey = BacklogApiKeyResolver::resolve($request);
+
+    if ($apiKey === null) {
+        return response()->json(['error' => 'No API key provided'], 401);
+    }
+
+    return $service->getNotifications($apiKey);
 });
 
 Route::middleware([])->group(function () {

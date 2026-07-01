@@ -29,7 +29,7 @@ defineProps({
   },
   refreshedAt: {
     type: String,
-    required: true,
+    default: null,
   },
   backlogUnreadCount: {
     type: Number,

@@ -15,6 +15,8 @@ class BacklogNotificationService
 {
     private const CACHE_KEY_PREFIX = 'backlog.notifications';
 
+    private ?string $apiKey = null;
+
     private ?int $lastCurrentUnreadCount = null;
 
     private bool $lastServedFromCache = false;
@@ -22,20 +24,32 @@ class BacklogNotificationService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function getNotifications(int $count = 100, bool $forceRefresh = false): array
+    public function getNotifications(string $apiKey, int $count = 100, bool $forceRefresh = false): array
     {
+        if (! $this->bindApiKey($apiKey)) {
+            return [];
+        }
+
         return $this->syncNotifications($count, $forceRefresh)['data'];
     }
 
-    public function getLastFetchedAt(int $count = 100): string
+    public function getLastFetchedAt(string $apiKey, int $count = 100): string
     {
+        if (! $this->bindApiKey($apiKey)) {
+            return now()->toIso8601String();
+        }
+
         $cached = Cache::get($this->cacheKey($count));
 
         return is_array($cached) ? ($cached['fetched_at'] ?? now()->toIso8601String()) : now()->toIso8601String();
     }
 
-    public function getCachedUnreadCount(int $count = 100): int
+    public function getCachedUnreadCount(string $apiKey, int $count = 100): int
     {
+        if (! $this->bindApiKey($apiKey)) {
+            return 0;
+        }
+
         return $this->lastCurrentUnreadCount ?? $this->getUnreadCount();
     }
 
@@ -46,10 +60,14 @@ class BacklogNotificationService
 
     public function getUnreadCount(): int
     {
+        if ($this->apiKey === null) {
+            return 0;
+        }
+
         $response = Http::get(
             config('backlog.url').'/api/v2/notifications/count',
             [
-                'apiKey' => config('backlog.api_key'),
+                'apiKey' => $this->apiKey,
                 'alreadyRead' => false,
             ],
         );
@@ -151,7 +169,7 @@ class BacklogNotificationService
         $response = Http::get(
             config('backlog.url').'/api/v2/notifications',
             [
-                'apiKey' => config('backlog.api_key'),
+                'apiKey' => $this->apiKey,
                 'minId' => $maxId + 1,
                 'count' => max(1, min($fetchCount, 100)),
                 'order' => 'asc',
@@ -168,9 +186,7 @@ class BacklogNotificationService
             return null;
         }
 
-        $merged = $this->mergeNotifications($newItems, $cachedData, $maxItems);
-
-        return $merged;
+        return $this->mergeNotifications($newItems, $cachedData, $maxItems);
     }
 
     /**
@@ -235,7 +251,7 @@ class BacklogNotificationService
         $response = Http::get(
             config('backlog.url').'/api/v2/notifications',
             [
-                'apiKey' => config('backlog.api_key'),
+                'apiKey' => $this->apiKey,
                 'count' => $count,
             ],
         );
@@ -247,8 +263,23 @@ class BacklogNotificationService
         return $response->json() ?? [];
     }
 
+    private function bindApiKey(string $apiKey): bool
+    {
+        $apiKey = trim($apiKey);
+
+        if ($apiKey === '') {
+            $this->apiKey = null;
+
+            return false;
+        }
+
+        $this->apiKey = $apiKey;
+
+        return true;
+    }
+
     private function cacheKey(int $count): string
     {
-        return self::CACHE_KEY_PREFIX.'.'.$count;
+        return self::CACHE_KEY_PREFIX.'.'.$count.'.'.hash('sha256', (string) $this->apiKey);
     }
 }

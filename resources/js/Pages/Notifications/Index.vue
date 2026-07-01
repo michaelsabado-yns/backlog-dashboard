@@ -18,6 +18,7 @@ import { computed, ref, watch } from 'vue';
  * @property {string} refreshed_at
  * @property {number} backlog_unread_count
  * @property {boolean} from_cache
+ * @property {boolean} has_api_key
  */
 
 /** @type {Props} */
@@ -32,13 +33,17 @@ const props = defineProps({
   },
   refreshed_at: {
     type: String,
-    required: true,
+    default: null,
   },
   backlog_unread_count: {
     type: Number,
     required: true,
   },
   from_cache: {
+    type: Boolean,
+    required: true,
+  },
+  has_api_key: {
     type: Boolean,
     required: true,
   },
@@ -141,6 +146,10 @@ const filteredNotifications = computed(() => {
 });
 
 const refreshNotifications = () => {
+  if (!props.has_api_key) {
+    return;
+  }
+
   refreshing.value = true;
 
   router.get(
@@ -180,42 +189,57 @@ const handleMarkAllAsRead = () => {
 
     <div class="py-8">
       <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-        <NotificationStats
-          :total-count="notificationCounts.total"
-          :unread-count="notificationCounts.unread"
-          :read-count="notificationCounts.read"
-          :refreshed-at="refreshed_at"
-          :backlog-unread-count="backlog_unread_count"
-          :from-cache="from_cache"
-          :refreshing="refreshing"
-          @refresh="refreshNotifications"
-          @mark-all-read="handleMarkAllAsRead"
-        />
-
-        <NotificationFilters
-          v-model:search="search"
-          v-model:project="selectedProject"
-          v-model:type="selectedType"
-          v-model:read-status="selectedReadStatus"
-          :project-options="projectOptions"
-          :type-options="typeOptions"
-        />
-
-        <div class="flex items-center justify-between text-sm text-gray-500">
-          <p>
-            Showing
-            <span class="font-medium text-gray-700">
-              {{ filteredNotifications.length.toLocaleString() }}
-            </span>
-            of
-            <span class="font-medium text-gray-700">
-              {{ total_count.toLocaleString() }}
-            </span>
-            notifications
+        <div
+          v-if="!has_api_key"
+          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm"
+        >
+          <p class="text-lg font-medium text-gray-900">
+            Enter your Backlog API key to get started
+          </p>
+          <p class="mt-2 text-sm text-gray-500">
+            Use the API key field in the navbar above. Your key is stored in
+            this browser only and is never saved on the server.
           </p>
         </div>
 
-        <NotificationTable :notifications="filteredNotifications" />
+        <template v-else>
+          <NotificationStats
+            :total-count="notificationCounts.total"
+            :unread-count="notificationCounts.unread"
+            :read-count="notificationCounts.read"
+            :refreshed-at="refreshed_at"
+            :backlog-unread-count="backlog_unread_count"
+            :from-cache="from_cache"
+            :refreshing="refreshing"
+            @refresh="refreshNotifications"
+            @mark-all-read="handleMarkAllAsRead"
+          />
+
+          <NotificationFilters
+            v-model:search="search"
+            v-model:project="selectedProject"
+            v-model:type="selectedType"
+            v-model:read-status="selectedReadStatus"
+            :project-options="projectOptions"
+            :type-options="typeOptions"
+          />
+
+          <div class="flex items-center justify-between text-sm text-gray-500">
+            <p>
+              Showing
+              <span class="font-medium text-gray-700">
+                {{ filteredNotifications.length.toLocaleString() }}
+              </span>
+              of
+              <span class="font-medium text-gray-700">
+                {{ total_count.toLocaleString() }}
+              </span>
+              notifications
+            </p>
+          </div>
+
+          <NotificationTable :notifications="filteredNotifications" />
+        </template>
       </div>
     </div>
   </PublicLayout>
