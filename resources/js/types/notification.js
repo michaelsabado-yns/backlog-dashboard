@@ -11,4 +11,8 @@
  * @property {string|null} backlog_url
  */
 
+/**
+ * @typedef {Notification & { isRead: boolean }} NotificationWithReadState
+ */
+
 export {};

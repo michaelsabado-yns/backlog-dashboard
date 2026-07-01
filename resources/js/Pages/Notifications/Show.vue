@@ -1,5 +1,6 @@
 <script setup>
 import BacklogMarkdown from '@/Components/Notifications/BacklogMarkdown.vue';
+import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -13,12 +14,23 @@ import { Head, Link } from '@inertiajs/vue3';
  */
 
 /** @type {Props} */
-defineProps({
+const props = defineProps({
   notification: {
     type: Object,
     required: true,
   },
 });
+
+const { markAsRead } = useNotificationReadState();
+
+markAsRead(props.notification.id);
+
+/**
+ * @param {number|string} id
+ */
+const openInBacklog = (id) => {
+  markAsRead(id);
+};
 
 const formatDate = (isoString) => {
   if (!isoString) {
@@ -41,8 +53,8 @@ const formatDate = (isoString) => {
         <div>
           <p class="text-sm text-gray-500">{{ notification.project }}</p>
           <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            {{ notification.issue_key ?? 'Notification' }}
-          </h2>
+              {{ notification.issue_key ?? 'Notification' }}
+            </h2>
         </div>
 
         <Link
@@ -83,6 +95,7 @@ const formatDate = (isoString) => {
               target="_blank"
               rel="noopener noreferrer"
               class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500"
+              @click="openInBacklog(notification.id)"
             >
               Open in Backlog
             </a>

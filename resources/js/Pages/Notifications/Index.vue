@@ -2,9 +2,10 @@
 import NotificationFilters from '@/Components/Notifications/NotificationFilters.vue';
 import NotificationStats from '@/Components/Notifications/NotificationStats.vue';
 import NotificationTable from '@/Components/Notifications/NotificationTable.vue';
+import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 /**
  * @typedef {import('@/types/notification').Notification} Notification
@@ -33,10 +34,28 @@ const props = defineProps({
   },
 });
 
+const {
+  readState,
+  isRead,
+  markAllAsRead,
+  getUnreadCount,
+  getReadCount,
+  cleanupReadState,
+} = useNotificationReadState();
+
 const search = ref('');
 const selectedProject = ref('');
 const selectedType = ref('');
+const selectedReadStatus = ref('');
 const refreshing = ref(false);
+
+watch(
+  () => props.notifications,
+  (notifications) => {
+    cleanupReadState(notifications);
+  },
+  { immediate: true },
+);
 
 const projectOptions = computed(() =>
   [...new Set(props.notifications.map((notification) => notification.project))]
@@ -50,10 +69,29 @@ const typeOptions = computed(() =>
     .sort((a, b) => a.localeCompare(b)),
 );
 
+const notificationsWithReadState = computed(() => {
+  readState.value;
+
+  return props.notifications.map((notification) => ({
+    ...notification,
+    isRead: isRead(notification.id),
+  }));
+});
+
+const notificationCounts = computed(() => {
+  readState.value;
+
+  return {
+    total: props.notifications.length,
+    unread: getUnreadCount(props.notifications),
+    read: getReadCount(props.notifications),
+  };
+});
+
 const filteredNotifications = computed(() => {
   const query = search.value.trim().toLowerCase();
 
-  return props.notifications.filter((notification) => {
+  return notificationsWithReadState.value.filter((notification) => {
     if (
       selectedProject.value &&
       notification.project !== selectedProject.value
@@ -62,6 +100,14 @@ const filteredNotifications = computed(() => {
     }
 
     if (selectedType.value && notification.type !== selectedType.value) {
+      return false;
+    }
+
+    if (selectedReadStatus.value === 'unread' && notification.isRead) {
+      return false;
+    }
+
+    if (selectedReadStatus.value === 'read' && !notification.isRead) {
       return false;
     }
 
@@ -93,6 +139,10 @@ const refreshNotifications = () => {
     },
   });
 };
+
+const handleMarkAllAsRead = () => {
+  markAllAsRead(props.notifications);
+};
 </script>
 
 <template>
@@ -108,16 +158,20 @@ const refreshNotifications = () => {
     <div class="py-8">
       <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
         <NotificationStats
-          :total-count="total_count"
+          :total-count="notificationCounts.total"
+          :unread-count="notificationCounts.unread"
+          :read-count="notificationCounts.read"
           :refreshed-at="refreshed_at"
           :refreshing="refreshing"
           @refresh="refreshNotifications"
+          @mark-all-read="handleMarkAllAsRead"
         />
 
         <NotificationFilters
           v-model:search="search"
           v-model:project="selectedProject"
           v-model:type="selectedType"
+          v-model:read-status="selectedReadStatus"
           :project-options="projectOptions"
           :type-options="typeOptions"
         />

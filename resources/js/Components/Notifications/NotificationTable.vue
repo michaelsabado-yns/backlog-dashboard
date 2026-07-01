@@ -1,14 +1,15 @@
 <script setup>
+import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import { previewBacklogMarkdown } from '@/utils/backlogMarkdown';
 import { Link } from '@inertiajs/vue3';
 
 /**
- * @typedef {import('@/types/notification').Notification} Notification
+ * @typedef {import('@/types/notification').NotificationWithReadState} NotificationWithReadState
  */
 
 /**
  * @typedef {Object} Props
- * @property {Notification[]} notifications
+ * @property {NotificationWithReadState[]} notifications
  */
 
 /** @type {Props} */
@@ -19,6 +20,8 @@ defineProps({
   },
 });
 
+const { markAsRead } = useNotificationReadState();
+
 const formatDate = (isoString) => {
   if (!isoString) {
     return '—';
@@ -28,6 +31,13 @@ const formatDate = (isoString) => {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(isoString));
+};
+
+/**
+ * @param {NotificationWithReadState} notification
+ */
+const openInBacklog = (notification) => {
+  markAsRead(notification.id);
 };
 </script>
 
@@ -46,6 +56,12 @@ const formatDate = (isoString) => {
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
+            <th
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Status
+            </th>
             <th
               scope="col"
               class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
@@ -94,12 +110,31 @@ const formatDate = (isoString) => {
           <tr
             v-for="notification in notifications"
             :key="notification.id"
-            class="transition-colors hover:bg-gray-50"
+            class="transition-colors"
+            :class="
+              notification.isRead
+                ? 'hover:bg-gray-50'
+                : 'bg-indigo-50/60 hover:bg-indigo-50'
+            "
           >
-            <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+            <td class="whitespace-nowrap px-4 py-3 text-sm">
+              <span
+                v-if="!notification.isRead"
+                class="inline-flex rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700"
+              >
+                Unread
+              </span>
+            </td>
+            <td
+              class="whitespace-nowrap px-4 py-3 text-sm text-gray-700"
+              :class="{ 'font-semibold text-gray-900': !notification.isRead }"
+            >
               {{ notification.project }}
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+            <td
+              class="whitespace-nowrap px-4 py-3 text-sm text-gray-900"
+              :class="{ 'font-bold': !notification.isRead, 'font-medium': notification.isRead }"
+            >
               <Link
                 :href="route('notifications.show', notification.id)"
                 class="text-indigo-600 hover:text-indigo-500"
@@ -107,7 +142,10 @@ const formatDate = (isoString) => {
                 {{ notification.issue_key ?? '—' }}
               </Link>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700">
+            <td
+              class="px-4 py-3 text-sm text-gray-700"
+              :class="{ 'font-semibold text-gray-900': !notification.isRead }"
+            >
               <p class="line-clamp-2">{{ notification.summary }}</p>
               <p
                 v-if="notification.content"
@@ -116,7 +154,10 @@ const formatDate = (isoString) => {
                 {{ previewBacklogMarkdown(notification.content) }}
               </p>
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+            <td
+              class="whitespace-nowrap px-4 py-3 text-sm text-gray-700"
+              :class="{ 'font-semibold text-gray-900': !notification.isRead }"
+            >
               {{ notification.sender }}
             </td>
             <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
@@ -126,7 +167,10 @@ const formatDate = (isoString) => {
                 {{ notification.type }}
               </span>
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            <td
+              class="whitespace-nowrap px-4 py-3 text-sm text-gray-500"
+              :class="{ 'font-semibold text-gray-700': !notification.isRead }"
+            >
               {{ formatDate(notification.created_at) }}
             </td>
             <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
@@ -143,8 +187,9 @@ const formatDate = (isoString) => {
                   target="_blank"
                   rel="noopener noreferrer"
                   class="font-medium text-gray-600 hover:text-gray-800"
+                  @click="openInBacklog(notification)"
                 >
-                  Backlog
+                  Open in Backlog
                 </a>
               </div>
             </td>
