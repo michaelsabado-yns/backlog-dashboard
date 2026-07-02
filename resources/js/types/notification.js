@@ -2,6 +2,8 @@
  * @typedef {Object} Notification
  * @property {number} id
  * @property {string} project
+ * @property {number|null} project_id
+ * @property {string|null} project_key
  * @property {string|null} issue_key
  * @property {string} summary
  * @property {string} sender

@@ -41,6 +41,8 @@ class NotificationTransformer
         return [
             'id' => $notification['id'],
             'project' => $notification['project']['name'] ?? 'Unknown',
+            'project_id' => isset($notification['project']['id']) ? (int) $notification['project']['id'] : null,
+            'project_key' => $notification['project']['projectKey'] ?? null,
             'issue_key' => $issueKey,
             'summary' => $notification['issue']['summary'] ?? $this->resolveSummary($notification),
             'sender' => $notification['sender']['name'] ?? 'Unknown',

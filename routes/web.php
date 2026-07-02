@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\DailyHoursTrackerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectSettingsController;
 use App\Services\BacklogNotificationService;
 use App\Support\BacklogApiKeyResolver;
 use Illuminate\Foundation\Application;
@@ -46,6 +48,22 @@ Route::middleware([])->group(function () {
         ->name('notifications.index');
     Route::get('/notifications/{id}', [NotificationController::class, 'show'])
         ->name('notifications.show');
+    Route::get('/daily-hours', [DailyHoursTrackerController::class, 'index'])
+        ->name('daily-hours.index');
+    Route::get('/daily-hours/my-issues', [DailyHoursTrackerController::class, 'myIssues'])
+        ->name('daily-hours.my-issues');
+    Route::get('/daily-hours/date-bounds', [DailyHoursTrackerController::class, 'dateBounds'])
+        ->name('daily-hours.date-bounds');
+    Route::get('/daily-hours/notifications', [DailyHoursTrackerController::class, 'notifications'])
+        ->name('daily-hours.notifications');
+    Route::get('/project-settings', [ProjectSettingsController::class, 'index'])
+        ->name('project-settings.index');
+    Route::get('/project-settings/projects', [ProjectSettingsController::class, 'projects'])
+        ->name('project-settings.projects');
+    Route::post('/project-settings/refresh', [ProjectSettingsController::class, 'refreshProjects'])
+        ->name('project-settings.refresh');
+    Route::get('/project-settings/myself', [ProjectSettingsController::class, 'myself'])
+        ->name('project-settings.myself');
 });
 
 require __DIR__.'/auth.php';

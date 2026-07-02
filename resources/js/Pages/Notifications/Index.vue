@@ -2,6 +2,10 @@
 import NotificationFilters from '@/Components/Notifications/NotificationFilters.vue';
 import NotificationStats from '@/Components/Notifications/NotificationStats.vue';
 import NotificationTable from '@/Components/Notifications/NotificationTable.vue';
+import {
+  getSelectedProjectIds,
+  hasConfiguredProjectSelection,
+} from '@/composables/useBacklogProjectSettings';
 import { useNotificationReadState } from '@/composables/useNotificationReadState';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
@@ -72,14 +76,31 @@ watch(
   { immediate: true },
 );
 
+const projectScopedNotifications = computed(() => {
+  if (!hasConfiguredProjectSelection()) {
+    return props.notifications;
+  }
+
+  const allowed = new Set(getSelectedProjectIds());
+
+  if (allowed.size === 0) {
+    return [];
+  }
+
+  return props.notifications.filter(
+    (notification) =>
+      notification.project_id !== null && allowed.has(notification.project_id),
+  );
+});
+
 const projectOptions = computed(() =>
-  [...new Set(props.notifications.map((notification) => notification.project))]
+  [...new Set(projectScopedNotifications.value.map((notification) => notification.project))]
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b)),
 );
 
 const typeOptions = computed(() =>
-  [...new Set(props.notifications.map((notification) => notification.type))]
+  [...new Set(projectScopedNotifications.value.map((notification) => notification.type))]
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b)),
 );
@@ -87,7 +108,7 @@ const typeOptions = computed(() =>
 const notificationsWithReadState = computed(() => {
   readState.value;
 
-  return props.notifications.map((notification) => ({
+  return projectScopedNotifications.value.map((notification) => ({
     ...notification,
     isRead: isRead(notification.id),
   }));
@@ -97,9 +118,9 @@ const notificationCounts = computed(() => {
   readState.value;
 
   return {
-    total: props.notifications.length,
-    unread: getUnreadCount(props.notifications),
-    read: getReadCount(props.notifications),
+    total: projectScopedNotifications.value.length,
+    unread: getUnreadCount(projectScopedNotifications.value),
+    read: getReadCount(projectScopedNotifications.value),
   };
 });
 
@@ -173,7 +194,7 @@ const refreshNotifications = () => {
 };
 
 const handleMarkAllAsRead = () => {
-  markAllAsRead(props.notifications);
+  markAllAsRead(projectScopedNotifications.value);
 };
 </script>
 

@@ -28,6 +28,22 @@ const showingNavigationDropdown = ref(false);
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
                                 <NavLink
+                                    :href="route('project-settings.index')"
+                                    :active="
+                                        route().current('project-settings.*')
+                                    "
+                                >
+                                    Project Settings
+                                </NavLink>
+                                <NavLink
+                                    :href="route('daily-hours.index')"
+                                    :active="
+                                        route().current('daily-hours.*')
+                                    "
+                                >
+                                    Daily Tracker
+                                </NavLink>
+                                <NavLink
                                     :href="route('notifications.index')"
                                     :active="
                                         route().current('notifications.*')
@@ -92,6 +108,22 @@ const showingNavigationDropdown = ref(false);
                     class="sm:hidden"
                 >
                     <div class="space-y-1 pb-3 pt-2">
+                        <ResponsiveNavLink
+                            :href="route('project-settings.index')"
+                            :active="
+                                route().current('project-settings.*')
+                            "
+                        >
+                            Project Settings
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('daily-hours.index')"
+                            :active="
+                                route().current('daily-hours.*')
+                            "
+                        >
+                            Daily Tracker
+                        </ResponsiveNavLink>
                         <ResponsiveNavLink
                             :href="route('notifications.index')"
                             :active="
