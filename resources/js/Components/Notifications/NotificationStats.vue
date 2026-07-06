@@ -60,72 +60,50 @@ const formatTimestamp = (isoString) => {
 </script>
 
 <template>
-  <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-    <div
-      class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
-    >
-      <div class="grid flex-1 gap-4 sm:grid-cols-3">
-        <div class="space-y-1">
-          <p class="text-sm font-medium text-gray-500">Total notifications</p>
-          <p class="text-3xl font-semibold text-gray-900">
-            {{ totalCount.toLocaleString() }}
-          </p>
-        </div>
-
-        <div class="space-y-1">
-          <p class="text-sm font-medium text-gray-500">Unread notifications</p>
-          <p class="text-3xl font-semibold text-indigo-600">
-            {{ unreadCount.toLocaleString() }}
-          </p>
-        </div>
-
-        <div class="space-y-1">
-          <p class="text-sm font-medium text-gray-500">Read notifications</p>
-          <p class="text-3xl font-semibold text-green-700">
-            {{ readCount.toLocaleString() }}
-          </p>
-        </div>
+  <div class="space-y-2">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-gray-600">
+        <span>
+          <span class="font-semibold text-gray-900">{{ totalCount.toLocaleString() }}</span>
+          total
+        </span>
+        <span>
+          <span class="font-semibold text-green-700">{{ unreadCount.toLocaleString() }}</span>
+          unread
+        </span>
+        <span>
+          <span class="font-semibold text-gray-800">{{ readCount.toLocaleString() }}</span>
+          read
+        </span>
       </div>
 
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div class="text-sm text-gray-500 sm:mr-2">
-          <p>
-            Last fetched:
-            <span class="font-medium text-gray-700">
-              {{ formatTimestamp(refreshedAt) }}
-            </span>
-            <span v-if="fromCache" class="text-xs text-gray-400">
-              (cached)
-            </span>
-          </p>
-          <p class="text-xs text-gray-400">
-            Backlog unread:
-            <span class="font-medium text-gray-600">
-              {{ backlogUnreadCount.toLocaleString() }}
-            </span>
-          </p>
-        </div>
-
+      <div class="flex w-full items-center gap-2 sm:w-auto">
         <SecondaryButton
           type="button"
-          class="justify-center"
+          class="flex-1 justify-center sm:flex-none"
           :disabled="unreadCount === 0"
           @click="$emit('mark-all-read')"
         >
-          Mark all as read
+          Mark all read
         </SecondaryButton>
 
         <PrimaryButton
           type="button"
-          class="justify-center"
+          class="flex-1 justify-center sm:flex-none"
           :disabled="refreshing"
-          title="Force refresh from Backlog API"
+          title="Force refetch from Backlog API"
           @click="$emit('refresh')"
         >
-          <span v-if="refreshing">Refreshing…</span>
-          <span v-else>Refresh</span>
+          <span v-if="refreshing">Refetching…</span>
+          <span v-else>Refetch</span>
         </PrimaryButton>
       </div>
     </div>
+
+    <p class="text-xs text-gray-400">
+      Fetched {{ formatTimestamp(refreshedAt) }}
+      <span v-if="fromCache">· cached</span>
+      · Backlog unread {{ backlogUnreadCount.toLocaleString() }}
+    </p>
   </div>
 </template>

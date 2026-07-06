@@ -1,5 +1,4 @@
 <script setup>
-import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 /**
@@ -46,31 +45,37 @@ defineEmits([
   'update:type',
   'update:readStatus',
 ]);
+
+const selectClass =
+  'block w-full rounded-md border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 </script>
 
 <template>
-  <div
-    class="sticky top-0 z-10 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-  >
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <div>
-        <InputLabel for="notification-search" value="Search" />
+  <div class="border-t border-gray-200 bg-gray-50 px-3 py-3 sm:px-4">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="col-span-2">
+        <label for="notification-search" class="sr-only">Search</label>
         <TextInput
           id="notification-search"
           :model-value="search"
           type="search"
-          class="mt-1 block w-full"
-          placeholder="Issue key, summary, sender, comment…"
+          class="block w-full border-gray-300 py-2 text-sm shadow-sm"
+          placeholder="Search issue, summary, comment…"
           @update:model-value="$emit('update:search', $event)"
         />
       </div>
 
       <div>
-        <InputLabel for="notification-read-status" value="Read status" />
+        <label
+          for="notification-read-status"
+          class="mb-1 block text-xs font-medium text-gray-600"
+        >
+          Status
+        </label>
         <select
           id="notification-read-status"
           :value="readStatus"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          :class="selectClass"
           @change="$emit('update:readStatus', $event.target.value)"
         >
           <option value="">All</option>
@@ -80,11 +85,36 @@ defineEmits([
       </div>
 
       <div>
-        <InputLabel for="notification-project" value="Project" />
+        <label
+          for="notification-type"
+          class="mb-1 block text-xs font-medium text-gray-600"
+        >
+          Type
+        </label>
+        <select
+          id="notification-type"
+          :value="type"
+          :class="selectClass"
+          @change="$emit('update:type', $event.target.value)"
+        >
+          <option value="">All types</option>
+          <option v-for="option in typeOptions" :key="option" :value="option">
+            {{ option }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-span-2">
+        <label
+          for="notification-project"
+          class="mb-1 block text-xs font-medium text-gray-600"
+        >
+          Project
+        </label>
         <select
           id="notification-project"
           :value="project"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          :class="selectClass"
           @change="$emit('update:project', $event.target.value)"
         >
           <option value="">All projects</option>
@@ -93,21 +123,6 @@ defineEmits([
             :key="option"
             :value="option"
           >
-            {{ option }}
-          </option>
-        </select>
-      </div>
-
-      <div>
-        <InputLabel for="notification-type" value="Notification type" />
-        <select
-          id="notification-type"
-          :value="type"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          @change="$emit('update:type', $event.target.value)"
-        >
-          <option value="">All types</option>
-          <option v-for="option in typeOptions" :key="option" :value="option">
             {{ option }}
           </option>
         </select>

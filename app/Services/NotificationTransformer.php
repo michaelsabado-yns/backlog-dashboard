@@ -51,6 +51,7 @@ class NotificationTransformer
             'created_at' => $notification['created'] ?? null,
             'issue_status' => $notification['issue']['status']['name'] ?? null,
             'issue_status_color' => $notification['issue']['status']['color'] ?? null,
+            'assignee' => $notification['issue']['assignee']['name'] ?? null,
             'backlog_url' => $this->buildBacklogUrl($notification, $issueKey),
         ];
     }

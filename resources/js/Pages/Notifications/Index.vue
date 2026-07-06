@@ -156,6 +156,7 @@ const filteredNotifications = computed(() => {
       notification.summary,
       notification.sender,
       notification.content,
+      notification.assignee,
       notification.issue_status,
     ]
       .filter(Boolean)
@@ -208,8 +209,8 @@ const handleMarkAllAsRead = () => {
       </h2>
     </template>
 
-    <div class="py-8">
-      <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+    <div class="py-5">
+      <div class="mx-auto max-w-4xl space-y-3 px-4 sm:px-6 lg:px-8">
         <div
           v-if="!has_api_key"
           class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm"
@@ -224,42 +225,37 @@ const handleMarkAllAsRead = () => {
         </div>
 
         <template v-else>
-          <NotificationStats
-            :total-count="notificationCounts.total"
-            :unread-count="notificationCounts.unread"
-            :read-count="notificationCounts.read"
-            :refreshed-at="refreshed_at"
-            :backlog-unread-count="backlog_unread_count"
-            :from-cache="from_cache"
-            :refreshing="refreshing"
-            @refresh="refreshNotifications"
-            @mark-all-read="handleMarkAllAsRead"
-          />
+          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 px-3 py-3 sm:px-4">
+              <NotificationStats
+                :total-count="notificationCounts.total"
+                :unread-count="notificationCounts.unread"
+                :read-count="notificationCounts.read"
+                :refreshed-at="refreshed_at"
+                :backlog-unread-count="backlog_unread_count"
+                :from-cache="from_cache"
+                :refreshing="refreshing"
+                @refresh="refreshNotifications"
+                @mark-all-read="handleMarkAllAsRead"
+              />
+            </div>
 
-          <NotificationFilters
-            v-model:search="search"
-            v-model:project="selectedProject"
-            v-model:type="selectedType"
-            v-model:read-status="selectedReadStatus"
-            :project-options="projectOptions"
-            :type-options="typeOptions"
-          />
+            <NotificationFilters
+              v-model:search="search"
+              v-model:project="selectedProject"
+              v-model:type="selectedType"
+              v-model:read-status="selectedReadStatus"
+              :project-options="projectOptions"
+              :type-options="typeOptions"
+            />
 
-          <div class="flex items-center justify-between text-sm text-gray-500">
-            <p>
-              Showing
-              <span class="font-medium text-gray-700">
-                {{ filteredNotifications.length.toLocaleString() }}
-              </span>
-              of
-              <span class="font-medium text-gray-700">
-                {{ total_count.toLocaleString() }}
-              </span>
-              notifications
+            <p class="border-b border-gray-100 px-3 py-2 text-xs text-gray-400 sm:px-4">
+              {{ filteredNotifications.length.toLocaleString() }} of
+              {{ total_count.toLocaleString() }} shown
             </p>
-          </div>
 
-          <NotificationTable :notifications="filteredNotifications" />
+            <NotificationTable :notifications="filteredNotifications" />
+          </div>
         </template>
       </div>
     </div>

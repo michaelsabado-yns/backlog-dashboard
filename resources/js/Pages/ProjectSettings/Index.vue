@@ -1,9 +1,10 @@
 <script setup>
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
+import TextInput from '@/Components/TextInput.vue';
 import { useBacklogProjectSettings } from '@/composables/useBacklogProjectSettings';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { computed, onMounted, ref } from 'vue';
 
 defineProps({
@@ -29,9 +30,32 @@ const refreshing = ref(false);
 const fetchedAt = ref(null);
 const loadError = ref(null);
 const expandedProjectId = ref(null);
+const search = ref('');
+const showArchived = ref(false);
 
 const activeProjects = computed(() => projects.value.filter((project) => !project.archived));
+const archivedProjects = computed(() => projects.value.filter((project) => project.archived));
 const selectedCount = computed(() => selectedIds.value.length);
+
+const visibleProjects = computed(() => {
+  const query = search.value.trim().toLowerCase();
+  const pool = showArchived.value
+    ? projects.value
+    : activeProjects.value;
+
+  if (!query) {
+    return pool;
+  }
+
+  return pool.filter((project) => {
+    const haystack = [project.name, project.project_key]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(query);
+  });
+});
 
 const formatFetchedAt = (isoString) => {
   if (!isoString) {
@@ -91,6 +115,14 @@ const fieldRoleLabel = (role) => {
   return 'Unassigned';
 };
 
+const picSummary = (project) => {
+  if (project.person_in_charge_field) {
+    return project.person_in_charge_field.name;
+  }
+
+  return 'No PIC field detected';
+};
+
 onMounted(async () => {
   await Promise.all([loadCurrentUser(), loadProjects()]);
 });
@@ -101,11 +133,22 @@ onMounted(async () => {
 
   <PublicLayout>
     <template #header>
-      <h2 class="text-xl font-semibold leading-tight text-gray-800">Project Settings</h2>
+      <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm text-gray-500">Settings</p>
+          <h2 class="text-xl font-semibold leading-tight text-gray-800">Projects</h2>
+        </div>
+        <Link
+          :href="route('notifications.index')"
+          class="text-sm font-medium text-gray-600 hover:text-gray-900"
+        >
+          ← Back to app
+        </Link>
+      </div>
     </template>
 
-    <div class="py-8">
-      <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+    <div class="py-5">
+      <div class="mx-auto max-w-4xl space-y-3 px-4 sm:px-6 lg:px-8">
         <div
           v-if="!has_api_key"
           class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm"
@@ -116,164 +159,197 @@ onMounted(async () => {
         </div>
 
         <template v-else>
-          <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p class="text-sm text-gray-500">
-                  Selected projects are used for all Backlog API calls in this app.
-                </p>
-                <p v-if="currentUser" class="mt-1 text-sm text-gray-700">
-                  Logged in as
-                  <span class="font-medium">{{ currentUser.name }}</span>
-                  (ID: {{ currentUser.id }})
-                </p>
-                <p class="mt-1 text-xs text-gray-400">
-                  {{ selectedCount.toLocaleString() }} of
-                  {{ activeProjects.length.toLocaleString() }} active projects selected
-                  · Last fetched: {{ formatFetchedAt(fetchedAt) }}
-                </p>
+          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div class="space-y-2 border-b border-gray-200 px-3 py-3 sm:px-4">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div class="text-sm text-gray-600">
+                  <span class="font-semibold text-gray-900">{{ selectedCount.toLocaleString() }}</span>
+                  of
+                  <span class="font-semibold text-gray-900">{{ activeProjects.length.toLocaleString() }}</span>
+                  active projects selected
+                </div>
+
+                <div class="flex w-full items-center gap-2 sm:w-auto">
+                  <SecondaryButton
+                    type="button"
+                    class="flex-1 justify-center sm:flex-none"
+                    @click="handleSelectAll"
+                  >
+                    Select all
+                  </SecondaryButton>
+                  <SecondaryButton
+                    type="button"
+                    class="flex-1 justify-center sm:flex-none"
+                    @click="clearAll"
+                  >
+                    Clear
+                  </SecondaryButton>
+                  <PrimaryButton
+                    type="button"
+                    class="flex-1 justify-center sm:flex-none"
+                    :disabled="refreshing"
+                    @click="loadProjects(true)"
+                  >
+                    <span v-if="refreshing">Refetching…</span>
+                    <span v-else>Refetch</span>
+                  </PrimaryButton>
+                </div>
               </div>
 
-              <div class="flex flex-wrap gap-2">
-                <SecondaryButton type="button" @click="handleSelectAll">Select all</SecondaryButton>
-                <SecondaryButton type="button" @click="clearAll">Clear all</SecondaryButton>
-                <PrimaryButton type="button" :disabled="refreshing" @click="loadProjects(true)">
-                  <span v-if="refreshing">Refreshing…</span>
-                  <span v-else>Refresh projects</span>
-                </PrimaryButton>
+              <p class="text-xs text-gray-400">
+                <span v-if="currentUser">Logged in as {{ currentUser.name }}</span>
+                <span v-if="currentUser && fetchedAt"> · </span>
+                <span v-if="fetchedAt">Fetched {{ formatFetchedAt(fetchedAt) }}</span>
+              </p>
+
+              <p class="text-xs text-gray-500">
+                Enabled projects are sent with every Backlog API request from this browser.
+              </p>
+            </div>
+
+            <div class="border-b border-gray-100 bg-gray-50 px-3 py-2 sm:px-4">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <TextInput
+                  v-model="search"
+                  type="search"
+                  class="block w-full py-1.5 text-sm shadow-sm"
+                  placeholder="Search projects…"
+                />
+                <label class="flex shrink-0 items-center gap-2 text-xs text-gray-600">
+                  <input
+                    v-model="showArchived"
+                    type="checkbox"
+                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  Show archived
+                </label>
               </div>
             </div>
-          </div>
 
-          <div
-            v-if="loadError"
-            class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {{ loadError }}
-          </div>
-
-          <div
-            v-if="loading"
-            class="rounded-lg border border-gray-200 bg-white px-6 py-16 text-center text-sm text-gray-500 shadow-sm"
-          >
-            Loading projects, members, and custom fields…
-          </div>
-
-          <div v-else class="space-y-3">
-            <article
-              v-for="project in projects"
-              :key="project.id"
-              class="rounded-lg border bg-white shadow-sm"
-              :class="isProjectSelected(project.id) ? 'border-indigo-300' : 'border-gray-200'"
+            <div
+              v-if="loadError"
+              class="border-b border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 sm:px-4"
             >
-              <div class="flex items-start gap-4 p-4">
-                <input
-                  :id="`project-${project.id}`"
-                  type="checkbox"
-                  class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  :checked="isProjectSelected(project.id)"
-                  :disabled="project.archived"
-                  @change="toggleProject(project.id)"
-                />
+              {{ loadError }}
+            </div>
 
-                <div class="min-w-0 flex-1">
-                  <label :for="`project-${project.id}`" class="cursor-pointer">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="text-base font-semibold text-gray-900">{{ project.name }}</h3>
-                      <span class="text-sm text-indigo-600">{{ project.project_key }}</span>
-                      <span
-                        v-if="project.archived"
-                        class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
-                      >
-                        Archived
-                      </span>
-                    </div>
-                  </label>
+            <div
+              v-if="loading"
+              class="px-4 py-12 text-center text-sm text-gray-500"
+            >
+              Loading projects…
+            </div>
 
-                  <p class="mt-1 text-sm text-gray-500">
-                    {{ project.member_count.toLocaleString() }} members
-                    <span v-if="project.person_in_charge_field">
-                      · Person in charge:
-                      <span class="font-medium text-gray-700">
-                        {{ project.person_in_charge_field.name }}
-                        (ID {{ project.person_in_charge_field.id }})
-                      </span>
-                    </span>
-                    <span v-else>· No person-in-charge custom field detected for this project</span>
-                  </p>
+            <ul v-else-if="visibleProjects.length === 0" class="px-4 py-12 text-center text-sm text-gray-500">
+              <p class="font-medium text-gray-900">No projects match your filters</p>
+            </ul>
 
-                  <p
-                    v-if="project.sub_person_in_charge_fields?.length"
-                    class="mt-1 text-sm text-gray-500"
-                  >
-                    Sub person in charge:
-                    <span
-                      v-for="field in project.sub_person_in_charge_fields"
-                      :key="field.id"
-                      class="mr-2 font-medium text-gray-700"
-                    >
-                      {{ field.name }} (ID {{ field.id }})
-                    </span>
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  class="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-                  @click="toggleExpanded(project.id)"
-                >
-                  {{ expandedProjectId === project.id ? 'Hide details' : 'Show details' }}
-                </button>
-              </div>
-
-              <div
-                v-if="expandedProjectId === project.id"
-                class="border-t border-gray-100 bg-gray-50 px-4 py-4"
+            <ul v-else class="divide-y divide-gray-100">
+              <li
+                v-for="project in visibleProjects"
+                :key="project.id"
+                class="px-3 py-3 sm:px-4"
+                :class="[
+                  isProjectSelected(project.id) ? 'bg-indigo-50/40' : 'bg-white',
+                  project.archived ? 'opacity-60' : '',
+                ]"
               >
-                <div class="grid gap-6 lg:grid-cols-2">
-                  <div>
-                    <h4 class="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                      Members
-                    </h4>
-                    <ul class="mt-2 max-h-48 space-y-1 overflow-y-auto text-sm text-gray-700">
-                      <li v-for="member in project.members" :key="member.id">
-                        {{ member.name }}
-                        <span class="text-gray-400">({{ member.user_id }} · ID {{ member.id }})</span>
-                      </li>
-                    </ul>
-                  </div>
+                <div class="flex items-start gap-3">
+                  <input
+                    :id="`project-${project.id}`"
+                    type="checkbox"
+                    class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    :checked="isProjectSelected(project.id)"
+                    :disabled="project.archived"
+                    @change="toggleProject(project.id)"
+                  />
 
-                  <div>
-                    <h4 class="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                      Custom fields
-                    </h4>
-                    <ul class="mt-2 space-y-2 text-sm">
-                      <li
-                        v-for="field in project.custom_fields"
-                        :key="field.id"
-                        class="rounded-md border border-gray-200 bg-white p-3"
-                      >
-                        <p class="font-medium text-gray-900">
-                          {{ field.name }}
-                          <span class="text-gray-400">· ID {{ field.id }}</span>
+                  <div class="min-w-0 flex-1">
+                    <label :for="`project-${project.id}`" class="block cursor-pointer">
+                      <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span class="font-semibold text-gray-900">{{ project.name }}</span>
+                        <span class="text-xs font-medium text-indigo-600">{{ project.project_key }}</span>
+                        <span
+                          v-if="project.archived"
+                          class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-gray-500"
+                        >
+                          Archived
+                        </span>
+                      </div>
+
+                      <p class="mt-0.5 text-xs text-gray-500">
+                        {{ project.member_count.toLocaleString() }} members
+                        · {{ picSummary(project) }}
+                      </p>
+                    </label>
+
+                    <button
+                      v-if="project.custom_fields?.length || project.members?.length"
+                      type="button"
+                      class="mt-1 text-[11px] font-medium text-gray-500 hover:text-gray-800"
+                      @click="toggleExpanded(project.id)"
+                    >
+                      {{ expandedProjectId === project.id ? 'Hide details' : 'Details' }}
+                    </button>
+
+                    <div
+                      v-if="expandedProjectId === project.id"
+                      class="mt-2 space-y-3 rounded-md border border-gray-100 bg-gray-50 p-3 text-xs text-gray-600"
+                    >
+                      <div v-if="project.sub_person_in_charge_fields?.length">
+                        <p class="font-medium text-gray-700">Sub PIC fields</p>
+                        <p class="mt-0.5">
+                          {{
+                            project.sub_person_in_charge_fields
+                              .map((field) => `${field.name} (${field.id})`)
+                              .join(', ')
+                          }}
                         </p>
-                        <p class="text-xs text-gray-500">
-                          Type: {{ field.type_name }} · API:
-                          <code class="text-indigo-600">{{ field.api_filter }}</code>
-                        </p>
-                        <p class="text-xs text-gray-500">
-                          UI filter example:
-                          <code>{{ field.ui_filter_example }}</code>
-                        </p>
-                        <p v-if="field.role" class="mt-1 text-xs font-medium text-green-700">
-                          Detected as: {{ fieldRoleLabel(field.role) }}
-                        </p>
-                      </li>
-                    </ul>
+                      </div>
+
+                      <div v-if="project.members?.length" class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p class="font-medium text-gray-700">Members</p>
+                          <ul class="mt-1 max-h-32 space-y-0.5 overflow-y-auto">
+                            <li v-for="member in project.members" :key="member.id">
+                              {{ member.name }}
+                            </li>
+                          </ul>
+                        </div>
+
+                        <div v-if="project.custom_fields?.length">
+                          <p class="font-medium text-gray-700">Custom fields</p>
+                          <ul class="mt-1 max-h-32 space-y-1 overflow-y-auto">
+                            <li
+                              v-for="field in project.custom_fields"
+                              :key="field.id"
+                              class="rounded border border-gray-200 bg-white px-2 py-1"
+                            >
+                              <span class="font-medium text-gray-800">{{ field.name }}</span>
+                              <span class="text-gray-400"> · {{ field.id }}</span>
+                              <span
+                                v-if="field.role"
+                                class="ml-1 text-green-700"
+                              >
+                                ({{ fieldRoleLabel(field.role) }})
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </article>
+              </li>
+            </ul>
+
+            <p
+              v-if="!loading && archivedProjects.length > 0 && !showArchived"
+              class="border-t border-gray-100 px-3 py-2 text-[11px] text-gray-400 sm:px-4"
+            >
+              {{ archivedProjects.length.toLocaleString() }} archived project(s) hidden.
+              Enable “Show archived” to view them.
+            </p>
           </div>
         </template>
       </div>

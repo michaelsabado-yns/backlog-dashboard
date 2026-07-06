@@ -26,11 +26,8 @@ const { markAsRead } = useNotificationReadState();
 
 markAsRead(props.notification.id);
 
-/**
- * @param {number|string} id
- */
-const openInBacklog = (id) => {
-  markAsRead(id);
+const openInBacklog = () => {
+  markAsRead(props.notification.id);
 };
 
 const formatDate = (isoString) => {
@@ -39,9 +36,46 @@ const formatDate = (isoString) => {
   }
 
   return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'full',
+    dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(isoString));
+};
+
+const formatRelativeTime = (isoString) => {
+  if (!isoString) {
+    return '';
+  }
+
+  const now = Date.now();
+  const then = new Date(isoString).getTime();
+  const diffSeconds = Math.round((then - now) / 1000);
+  const absSeconds = Math.abs(diffSeconds);
+
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+
+  if (absSeconds < 60) {
+    return formatter.format(diffSeconds, 'second');
+  }
+
+  const diffMinutes = Math.round(diffSeconds / 60);
+
+  if (Math.abs(diffMinutes) < 60) {
+    return formatter.format(diffMinutes, 'minute');
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+
+  if (Math.abs(diffHours) < 24) {
+    return formatter.format(diffHours, 'hour');
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+
+  if (Math.abs(diffDays) < 7) {
+    return formatter.format(diffDays, 'day');
+  }
+
+  return formatDate(isoString);
 };
 </script>
 
@@ -50,48 +84,74 @@ const formatDate = (isoString) => {
 
   <PublicLayout>
     <template #header>
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-sm text-gray-500">{{ notification.project }}</p>
+          <p class="text-sm text-gray-500">Notification</p>
           <h2 class="text-xl font-semibold leading-tight text-gray-800">
-              {{ notification.issue_key ?? 'Notification' }}
-            </h2>
+            {{ notification.issue_key ?? 'Notification' }}
+          </h2>
         </div>
 
         <Link
           :href="route('notifications.index')"
-          class="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          class="text-sm font-medium text-gray-600 hover:text-gray-900"
         >
           ← Back to notifications
         </Link>
       </div>
     </template>
 
-    <div class="py-8">
-      <div class="mx-auto max-w-4xl space-y-6 px-4 sm:px-6 lg:px-8">
-        <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="space-y-2">
-              <span
-                class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700"
+    <div class="py-5">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <article class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <header class="border-b border-gray-100 px-4 py-4 sm:px-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span class="text-sm font-semibold text-gray-800">
+                    {{ notification.issue_key ?? 'Notification' }}
+                  </span>
+                  <IssueStatusBadge
+                    :status="notification.issue_status"
+                    :color="notification.issue_status_color"
+                  />
+                  <span
+                    class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-600"
+                  >
+                    {{ notification.type }}
+                  </span>
+                </div>
+
+                <h3 class="mt-2 text-base font-semibold leading-snug text-gray-900">
+                  {{ notification.summary }}
+                </h3>
+
+                <p class="mt-2 text-xs text-gray-500">
+                  <span class="font-medium text-gray-700">{{ notification.project }}</span>
+                  <span class="mx-1 text-gray-300">·</span>
+                  <span>{{ notification.sender }}</span>
+                  <template v-if="notification.assignee">
+                    <span class="mx-1 text-gray-300">·</span>
+                    <span>
+                      Assignee:
+                      <span class="font-medium text-gray-700">{{ notification.assignee }}</span>
+                    </span>
+                  </template>
+                </p>
+              </div>
+
+              <time
+                class="shrink-0 text-right text-xs text-gray-500"
+                :datetime="notification.created_at ?? undefined"
+                :title="formatDate(notification.created_at)"
               >
-                {{ notification.type }}
-              </span>
-              <IssueStatusBadge
-                :status="notification.issue_status"
-                :color="notification.issue_status_color"
-              />
-              <h3 class="text-lg font-semibold text-gray-900">
-                {{ notification.summary }}
-              </h3>
-              <p class="text-sm text-gray-500">
-                From
-                <span class="font-medium text-gray-700">
-                  {{ notification.sender }}
+                <span class="block font-medium text-gray-700">
+                  {{ formatRelativeTime(notification.created_at) }}
                 </span>
-                ·
-                {{ formatDate(notification.created_at) }}
-              </p>
+                <span class="mt-0.5 block text-[11px] text-gray-400">
+                  {{ formatDate(notification.created_at) }}
+                </span>
+              </time>
             </div>
 
             <a
@@ -99,31 +159,30 @@ const formatDate = (isoString) => {
               :href="notification.backlog_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500"
-              @click="openInBacklog(notification.id)"
+              class="mt-3 inline-flex text-sm font-medium text-green-700 hover:underline"
+              @click="openInBacklog"
             >
               Open in Backlog
             </a>
-          </div>
-        </div>
+          </header>
 
-        <div
-          v-if="notification.content"
-          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-        >
-          <h4 class="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
-            Comment
-          </h4>
-          <BacklogMarkdown :content="notification.content" />
-        </div>
+          <section v-if="notification.content" class="px-4 py-4 sm:px-5">
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              Comment
+            </p>
+            <BacklogMarkdown :content="notification.content" />
+          </section>
 
-        <div
-          v-else
-          class="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500"
-        >
-          This notification has no comment body. Open the issue in Backlog for full
-          context.
-        </div>
+          <section
+            v-else
+            class="border-t border-gray-100 px-4 py-8 text-center text-sm text-gray-500 sm:px-5"
+          >
+            <p class="font-medium text-gray-700">No comment body</p>
+            <p class="mt-1 text-xs">
+              Open the issue in Backlog for full context.
+            </p>
+          </section>
+        </article>
       </div>
     </div>
   </PublicLayout>

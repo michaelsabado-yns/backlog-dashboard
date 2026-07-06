@@ -1,7 +1,7 @@
 import { getSelectedProjectIds } from '@/composables/useBacklogProjectSettings';
 
 const STORAGE_KEY = 'backlog_daily_hours_cache';
-const HISTORY_STARTS_KEY = 'backlog_activity_range_starts_at_v2';
+const HISTORY_STARTS_KEY = 'backlog_activity_range_starts_at_v3';
 const LEGACY_HISTORY_STARTS_KEY = 'backlog_activity_history_starts_at';
 
 export const getBrowserTimezone = () => {

@@ -135,6 +135,22 @@ export const firstWeekdayOnOrAfter = (value) => {
   return current;
 };
 
+/** Monday (ISO week) of the calendar week containing `value`. */
+export const mondayOfWeek = (value) => {
+  const date = parseLocalDate(value);
+
+  if (!date) {
+    return value;
+  }
+
+  const weekday = date.getDay();
+  const offset = weekday === 0 ? -6 : 1 - weekday;
+
+  date.setDate(date.getDate() + offset);
+
+  return formatLocalDate(date);
+};
+
 export const isWeekdayInHistoryRange = (value, minDate, maxDate) => {
   if (isWeekend(value)) {
     return false;

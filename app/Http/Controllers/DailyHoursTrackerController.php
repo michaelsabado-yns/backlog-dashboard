@@ -145,7 +145,8 @@ class DailyHoursTrackerController extends Controller
     /**
      * @param  array{
      *     history_starts_at: string|null,
-     *     history_ends_at: string|null
+     *     history_ends_at: string|null,
+     *     earliest_activity_at: string|null
      * }  $historyBounds
      * @return array<string, mixed>
      */
@@ -161,6 +162,7 @@ class DailyHoursTrackerController extends Controller
         return [
             'history_starts_at' => $historyStartsAt,
             'history_ends_at' => $historyEndsAt,
+            'earliest_activity_at' => $historyBounds['earliest_activity_at'] ?? null,
             'date_reachable' => $dateReachable,
             'before_history' => $historyStartsAt !== null && $date < $historyStartsAt,
             'empty_reason' => $dateReachable ? 'no_hours_on_date' : 'before_history',

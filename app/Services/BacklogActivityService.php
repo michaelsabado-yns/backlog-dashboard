@@ -79,7 +79,8 @@ class BacklogActivityService
     /**
      * @return array{
      *     history_starts_at: string|null,
-     *     history_ends_at: string|null
+     *     history_ends_at: string|null,
+     *     earliest_activity_at: string|null
      * }
      */
     public function getActivityHistoryBounds(string $apiKey, ?string $timezone = null): array
@@ -90,13 +91,14 @@ class BacklogActivityService
             return [
                 'history_starts_at' => null,
                 'history_ends_at' => null,
+                'earliest_activity_at' => null,
             ];
         }
 
         $timezone = $this->resolveTimezone($timezone);
 
         return Cache::remember(
-            'backlog.activity_bounds.'.hash('sha256', $trimmedApiKey).'.'.$timezone,
+            'backlog.activity_bounds.v2.'.hash('sha256', $trimmedApiKey).'.'.$timezone,
             now()->addHour(),
             fn () => $this->probeActivityBounds($trimmedApiKey, $timezone),
         );
@@ -114,7 +116,8 @@ class BacklogActivityService
     /**
      * @return array{
      *     history_starts_at: string|null,
-     *     history_ends_at: string|null
+     *     history_ends_at: string|null,
+     *     earliest_activity_at: string|null
      * }
      */
     private function probeActivityBounds(string $apiKey, string $timezone): array
@@ -125,6 +128,7 @@ class BacklogActivityService
             return [
                 'history_starts_at' => null,
                 'history_ends_at' => null,
+                'earliest_activity_at' => null,
             ];
         }
 
@@ -151,8 +155,13 @@ class BacklogActivityService
         }
 
         return [
-            'history_starts_at' => $oldest,
+            // First selectable day is the day after the oldest activity in the
+            // latest-100 batch, so the boundary day (likely incomplete) stays disabled.
+            'history_starts_at' => $oldest !== null
+                ? Carbon::createFromFormat('Y-m-d', $oldest, $timezone)->addDay()->toDateString()
+                : null,
             'history_ends_at' => $newest,
+            'earliest_activity_at' => $oldest,
         ];
     }
 

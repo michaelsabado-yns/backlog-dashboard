@@ -1,9 +1,10 @@
 <script setup>
 import {
+  addDays,
   firstWeekdayOnOrAfter,
   formatLocalDate,
-  isWeekend,
   isWeekdayInHistoryRange,
+  mondayOfWeek,
   parseLocalDate,
 } from '@/utils/weekdayDate';
 import { computed, ref, watch } from 'vue';
@@ -29,13 +30,15 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-const visibleMonth = ref(props.modelValue);
+const WEEKDAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr'];
+
+const weekAnchor = ref(mondayOfWeek(props.modelValue));
 
 watch(
   () => props.modelValue,
   (value) => {
     if (value) {
-      visibleMonth.value = value;
+      weekAnchor.value = mondayOfWeek(value);
     }
   },
 );
@@ -44,115 +47,75 @@ const effectiveMinDate = computed(() =>
   props.minDate ? firstWeekdayOnOrAfter(props.minDate) : null,
 );
 
-const monthDate = computed(() => parseLocalDate(`${visibleMonth.value.slice(0, 7)}-01`));
+const weekLabel = computed(() => {
+  const monday = parseLocalDate(weekAnchor.value);
+  const friday = parseLocalDate(addDays(weekAnchor.value, 4));
 
-const monthLabel = computed(() => {
-  if (!monthDate.value) {
+  if (!monday || !friday) {
     return '';
   }
 
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'long',
-    year: 'numeric',
-  }).format(monthDate.value);
-});
-
-const rangeLabel = computed(() => {
-  if (props.minDate && props.maxDate) {
-    return `Selectable ${formatDisplayDate(effectiveMinDate.value ?? props.minDate)} – ${formatDisplayDate(props.maxDate)}`;
-  }
-
-  if (props.maxDate) {
-    return `Through ${formatDisplayDate(props.maxDate)}`;
-  }
-
-  return 'Loading activity range…';
-});
-
-const formatDisplayDate = (value) => {
-  const date = parseLocalDate(value);
-
-  if (!date) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
+  const formatter = new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
-  }).format(date);
-};
+  });
 
-const calendarDays = computed(() => {
-  if (!monthDate.value) {
-    return [];
-  }
+  const yearFormatter = new Intl.DateTimeFormat(undefined, { year: 'numeric' });
+  const start = formatter.format(monday);
+  const end = formatter.format(friday);
+  const year = yearFormatter.format(friday);
 
-  const year = monthDate.value.getFullYear();
-  const month = monthDate.value.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const startOffset = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = [];
+  return `${start} – ${end}, ${year}`;
+});
 
-  for (let index = 0; index < startOffset; index += 1) {
-    cells.push({ key: `pad-${index}`, empty: true });
-  }
+const weekdayCells = computed(() => {
+  const today = formatLocalDate(new Date());
 
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const value = formatLocalDate(new Date(year, month, day));
-    const weekend = isWeekend(value);
+  return WEEKDAY_LABELS.map((label, index) => {
+    const value = addDays(weekAnchor.value, index);
     const beforeHistory = props.minDate ? value < props.minDate : false;
     const inRange = isWeekdayInHistoryRange(value, effectiveMinDate.value, props.maxDate);
     const selectable = inRange && !props.disabled;
 
-    cells.push({
+    return {
       key: value,
-      empty: false,
+      label,
       value,
-      day,
-      weekend,
+      day: value.slice(8, 10).replace(/^0/, ''),
       beforeHistory,
-      inRange,
       selectable,
       selected: value === props.modelValue,
-      today: value === formatLocalDate(new Date()),
-    });
-  }
-
-  return cells;
+      today: value === today,
+    };
+  });
 });
 
-const canGoToPreviousMonth = computed(() => {
-  if (!monthDate.value || !props.minDate) {
+const canGoToPreviousWeek = computed(() => {
+  if (!props.minDate) {
     return true;
   }
 
-  const previousMonthEnd = formatLocalDate(new Date(monthDate.value.getFullYear(), monthDate.value.getMonth(), 0));
+  const previousFriday = addDays(weekAnchor.value, -3);
 
-  return previousMonthEnd >= props.minDate;
+  return previousFriday !== null && previousFriday >= props.minDate;
 });
 
-const canGoToNextMonth = computed(() => {
-  if (!monthDate.value || !props.maxDate) {
+const canGoToNextWeek = computed(() => {
+  if (!props.maxDate) {
     return true;
   }
 
-  const nextMonthStart = formatLocalDate(
-    new Date(monthDate.value.getFullYear(), monthDate.value.getMonth() + 1, 1),
-  );
+  const nextMonday = addDays(weekAnchor.value, 7);
 
-  return nextMonthStart <= props.maxDate;
+  return nextMonday !== null && nextMonday <= props.maxDate;
 });
 
-const shiftMonth = (amount) => {
-  if (!monthDate.value) {
-    return;
-  }
+const shiftWeek = (amount) => {
+  const next = addDays(weekAnchor.value, amount * 7);
 
-  visibleMonth.value = formatLocalDate(
-    new Date(monthDate.value.getFullYear(), monthDate.value.getMonth() + amount, 1),
-  );
+  if (next) {
+    weekAnchor.value = next;
+  }
 };
 
 const selectDay = (day) => {
@@ -165,85 +128,66 @@ const selectDay = (day) => {
 </script>
 
 <template>
-  <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-    <div class="mb-3 flex items-center justify-between gap-2">
+  <div class="w-full">
+    <div class="flex items-center gap-1.5">
       <button
         type="button"
-        class="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
-        :disabled="disabled || !canGoToPreviousMonth"
-        aria-label="Previous month"
-        @click="shiftMonth(-1)"
+        class="shrink-0 rounded-md border border-gray-200 px-2 py-2 text-sm text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        :disabled="disabled || !canGoToPreviousWeek"
+        aria-label="Previous week"
+        @click="shiftWeek(-1)"
       >
         ‹
       </button>
 
-      <div class="text-center">
-        <p class="text-sm font-semibold text-gray-900">{{ monthLabel }}</p>
-        <p class="text-xs text-gray-500">{{ rangeLabel }}</p>
+      <div class="grid min-w-0 flex-1 grid-cols-5 gap-1">
+        <button
+          v-for="day in weekdayCells"
+          :key="day.key"
+          type="button"
+          class="min-w-0 rounded-md border py-1.5 text-center transition"
+          :class="[
+            day.selected
+              ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
+              : day.selectable
+                ? 'border-gray-200 bg-white text-gray-900 hover:border-gray-300 hover:bg-gray-50'
+                : 'cursor-not-allowed border-transparent bg-gray-50 text-gray-300',
+            day.beforeHistory ? 'line-through decoration-gray-300' : '',
+            day.today && !day.selected ? 'ring-2 ring-indigo-300 ring-offset-1' : '',
+          ]"
+          :disabled="!day.selectable"
+          :title="
+            day.beforeHistory
+              ? 'Before available activity range'
+              : day.selectable
+                ? day.value
+                : undefined
+          "
+          @click="selectDay(day)"
+        >
+          <span
+            class="block text-[10px] font-medium uppercase leading-none"
+            :class="day.selected ? 'text-indigo-100' : 'text-gray-400'"
+          >
+            {{ day.label }}
+          </span>
+          <span class="mt-0.5 block text-sm font-semibold leading-none">{{ day.day }}</span>
+        </button>
       </div>
 
       <button
         type="button"
-        class="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
-        :disabled="disabled || !canGoToNextMonth"
-        aria-label="Next month"
-        @click="shiftMonth(1)"
+        class="shrink-0 rounded-md border border-gray-200 px-2 py-2 text-sm text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        :disabled="disabled || !canGoToNextWeek"
+        aria-label="Next week"
+        @click="shiftWeek(1)"
       >
         ›
       </button>
     </div>
 
-    <div class="mb-1 grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-wide text-gray-400">
-      <span>Mon</span>
-      <span>Tue</span>
-      <span>Wed</span>
-      <span>Thu</span>
-      <span>Fri</span>
-      <span>Sat</span>
-      <span>Sun</span>
-    </div>
-
-    <div class="grid grid-cols-7 gap-1">
-      <template v-for="day in calendarDays" :key="day.key">
-        <span v-if="day.empty" />
-        <button
-          v-else
-          type="button"
-          class="relative h-9 rounded-md text-sm transition"
-          :class="[
-            day.selected
-              ? 'bg-indigo-600 font-semibold text-white shadow-sm'
-              : day.selectable
-                ? 'font-medium text-gray-900 hover:bg-gray-100'
-                : day.weekend
-                  ? 'cursor-not-allowed bg-gray-50 text-gray-300'
-                  : day.beforeHistory
-                    ? 'cursor-not-allowed bg-gray-100 text-gray-300 line-through decoration-gray-300'
-                    : 'cursor-not-allowed text-gray-300',
-            day.today && !day.selected ? 'ring-2 ring-indigo-300' : '',
-          ]"
-          :disabled="!day.selectable"
-          :title="
-            day.beforeHistory
-              ? 'Before the earliest activity in your latest 100 updates'
-              : day.weekend
-                ? 'Weekends are not tracked'
-                : day.selectable
-                  ? 'Selectable weekday'
-                  : undefined
-          "
-          @click="selectDay(day)"
-        >
-          {{ day.day }}
-        </button>
-      </template>
-    </div>
-
-    <div class="mt-3 text-[11px] text-gray-500">
-      <span class="inline-flex items-center gap-1">
-        <span class="h-3 w-3 rounded bg-gray-100 line-through" />
-        Before available activity range
-      </span>
-    </div>
+    <p class="mt-1 text-center text-[11px] text-gray-400">
+      {{ weekLabel }}
+    </p>
   </div>
 </template>

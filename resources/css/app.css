@@ -8,7 +8,24 @@
     }
 
     .backlog-markdown--compact {
-        @apply line-clamp-2 text-xs text-gray-500;
+        @apply relative max-h-[5.5rem] overflow-hidden text-sm leading-relaxed text-gray-700;
+    }
+
+    .backlog-markdown--compact::after {
+        content: '';
+        @apply pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent;
+    }
+
+    .backlog-markdown--compact :where(h1) {
+        @apply text-base;
+    }
+
+    .backlog-markdown--compact :where(h2, h3, h4) {
+        @apply text-sm;
+    }
+
+    .backlog-markdown--compact :where(pre) {
+        @apply max-h-16 overflow-hidden p-2 text-xs;
     }
 
     .backlog-markdown--full {

@@ -12,6 +12,7 @@
  * @property {string|null} created_at
  * @property {string|null} issue_status
  * @property {string|null} issue_status_color
+ * @property {string|null} assignee
  * @property {string|null} backlog_url
  */
 

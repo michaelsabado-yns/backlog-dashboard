@@ -1,4 +1,6 @@
 <script setup>
+import Dropdown from '@/Components/Dropdown.vue';
+import DropdownLink from '@/Components/DropdownLink.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import BacklogApiKeyInput from '@/Components/BacklogApiKeyInput.vue';
 import NavLink from '@/Components/NavLink.vue';
@@ -28,14 +30,6 @@ const showingNavigationDropdown = ref(false);
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
                                 <NavLink
-                                    :href="route('project-settings.index')"
-                                    :active="
-                                        route().current('project-settings.*')
-                                    "
-                                >
-                                    Project Settings
-                                </NavLink>
-                                <NavLink
                                     :href="route('daily-hours.index')"
                                     :active="
                                         route().current('daily-hours.*')
@@ -54,8 +48,43 @@ const showingNavigationDropdown = ref(false);
                             </div>
                         </div>
 
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center">
+                        <div class="hidden items-center gap-3 sm:ms-6 sm:flex">
                             <BacklogApiKeyInput />
+
+                            <Dropdown align="right" width="48">
+                                <template #trigger>
+                                    <button
+                                        type="button"
+                                        class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+                                        :class="{
+                                            'border-indigo-300 bg-indigo-50 text-indigo-700':
+                                                route().current('project-settings.*'),
+                                        }"
+                                        aria-label="Settings menu"
+                                    >
+                                        <svg
+                                            class="h-4 w-4"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M7.84 1.804A1 1 0 018.82 1h2.36a1 1 0 01.98.804l.331 1.652a6.993 6.993 0 011.929 1.115l1.598-.54a1 1 0 011.186.447l1.18 2.04a1 1 0 01-.205 1.212l-1.27 1.27a6.993 6.993 0 010 2.778l1.27 1.27a1 1 0 01.205 1.212l-1.18 2.04a1 1 0 01-1.186.447l-1.598-.54a6.993 6.993 0 01-1.929 1.115l-.331 1.652a1 1 0 01-.98.804H8.82a1 1 0 01-.98-.804l-.331-1.652a6.993 6.993 0 01-1.929-1.115l-1.598.54a1 1 0 01-1.186-.447l-1.18-2.04a1 1 0 01.205-1.212l1.27-1.27a6.993 6.993 0 010-2.778l-1.27-1.27a1 1 0 01-.205-1.212l1.18-2.04a1 1 0 011.186-.447l1.598.54A6.993 6.993 0 017.51 3.456l.331-1.652zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                        <span class="hidden md:inline">Settings</span>
+                                    </button>
+                                </template>
+
+                                <template #content>
+                                    <DropdownLink :href="route('project-settings.index')">
+                                        Project settings
+                                    </DropdownLink>
+                                </template>
+                            </Dropdown>
                         </div>
 
                         <div class="-me-2 flex items-center sm:hidden">
@@ -109,14 +138,6 @@ const showingNavigationDropdown = ref(false);
                 >
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            :href="route('project-settings.index')"
-                            :active="
-                                route().current('project-settings.*')
-                            "
-                        >
-                            Project Settings
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
                             :href="route('daily-hours.index')"
                             :active="
                                 route().current('daily-hours.*')
@@ -131,6 +152,20 @@ const showingNavigationDropdown = ref(false);
                             "
                         >
                             Notifications
+                        </ResponsiveNavLink>
+                    </div>
+
+                    <div class="border-t border-gray-200 px-4 pb-2 pt-3">
+                        <p class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                            Settings
+                        </p>
+                        <ResponsiveNavLink
+                            :href="route('project-settings.index')"
+                            :active="
+                                route().current('project-settings.*')
+                            "
+                        >
+                            Project settings
                         </ResponsiveNavLink>
                     </div>
 
