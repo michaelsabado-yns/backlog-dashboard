@@ -25,6 +25,7 @@ class BacklogActivityService
         ?array $projectIds,
         string $date,
         ?string $timezone = null,
+        ?int $userId = null,
     ): array {
         unset($projectService);
 
@@ -38,10 +39,14 @@ class BacklogActivityService
             return [];
         }
 
-        $user = $this->getMyself($trimmedApiKey);
+        if ($userId === null) {
+            $user = $this->getMyself($trimmedApiKey);
 
-        if ($user === null) {
-            return [];
+            if ($user === null) {
+                return [];
+            }
+
+            $userId = (int) $user['id'];
         }
 
         $allowedProjectIds = $projectIds !== null ? array_flip($projectIds) : null;
@@ -49,7 +54,7 @@ class BacklogActivityService
 
         [$changes] = $this->fetchUserActivitiesForDate(
             $trimmedApiKey,
-            (int) $user['id'],
+            $userId,
             $date,
             $timezone,
         );
@@ -83,7 +88,7 @@ class BacklogActivityService
      *     earliest_activity_at: string|null
      * }
      */
-    public function getActivityHistoryBounds(string $apiKey, ?string $timezone = null): array
+    public function getActivityHistoryBounds(string $apiKey, ?string $timezone = null, ?int $userId = null): array
     {
         $trimmedApiKey = trim($apiKey);
 
@@ -95,12 +100,26 @@ class BacklogActivityService
             ];
         }
 
+        if ($userId === null) {
+            $user = $this->getMyself($trimmedApiKey);
+
+            if ($user === null) {
+                return [
+                    'history_starts_at' => null,
+                    'history_ends_at' => null,
+                    'earliest_activity_at' => null,
+                ];
+            }
+
+            $userId = (int) $user['id'];
+        }
+
         $timezone = $this->resolveTimezone($timezone);
 
         return Cache::remember(
-            'backlog.activity_bounds.v2.'.hash('sha256', $trimmedApiKey).'.'.$timezone,
+            'backlog.activity_bounds.v3.'.hash('sha256', $trimmedApiKey).'.'.$userId.'.'.$timezone,
             now()->addHour(),
-            fn () => $this->probeActivityBounds($trimmedApiKey, $timezone),
+            fn () => $this->probeActivityBounds($trimmedApiKey, $timezone, $userId),
         );
     }
 
@@ -120,19 +139,9 @@ class BacklogActivityService
      *     earliest_activity_at: string|null
      * }
      */
-    private function probeActivityBounds(string $apiKey, string $timezone): array
+    private function probeActivityBounds(string $apiKey, string $timezone, int $userId): array
     {
-        $user = $this->getMyself($apiKey);
-
-        if ($user === null) {
-            return [
-                'history_starts_at' => null,
-                'history_ends_at' => null,
-                'earliest_activity_at' => null,
-            ];
-        }
-
-        $batch = $this->fetchLatestActivities($apiKey, (int) $user['id']);
+        $batch = $this->fetchLatestActivities($apiKey, $userId);
         $oldest = null;
         $newest = null;
 
@@ -194,21 +203,45 @@ class BacklogActivityService
      */
     private function isTrackedHoursChange(array $change): bool
     {
+        return $this->resolveHoursFieldKind($change) !== null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $change
+     */
+    private function resolveHoursFieldKind(array $change): ?string
+    {
         $field = (string) ($change['field'] ?? '');
 
         if ($field === 'actualHours') {
-            return true;
+            return 'actual_hours';
         }
 
         if (($change['type'] ?? '') !== 'custom') {
-            return false;
+            return null;
         }
 
-        return $this->matchesSubActualHoursFieldName($field);
+        if ($this->matchesSubQaActualHoursFieldName($field)) {
+            return 'sub_qa_actual_hours';
+        }
+
+        if ($this->matchesQaActualHoursFieldName($field)) {
+            return 'qa_actual_hours';
+        }
+
+        if ($this->matchesSubActualHoursFieldName($field)) {
+            return 'sub_actual_hours';
+        }
+
+        return null;
     }
 
     private function matchesSubActualHoursFieldName(string $name): bool
     {
+        if ($this->matchesSubQaActualHoursFieldName($name)) {
+            return false;
+        }
+
         if (preg_match('/^actual hours \(sub\)$/i', $name) === 1) {
             return true;
         }
@@ -222,6 +255,44 @@ class BacklogActivityService
         }
 
         return preg_match('/^sub person in charge actual hours$/i', $name) === 1;
+    }
+
+    private function matchesQaActualHoursFieldName(string $name): bool
+    {
+        if ($this->matchesSubQaActualHoursFieldName($name)) {
+            return false;
+        }
+
+        if (preg_match('/^qa in charge actual hours$/i', $name) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^qa actual hours$/i', $name) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^actual hours \(qa\)$/i', $name) === 1) {
+            return true;
+        }
+
+        return preg_match('/qa[\s_-]*in[\s_-]*charge[\s_-]*actual[\s_-]*hours/i', $name) === 1;
+    }
+
+    private function matchesSubQaActualHoursFieldName(string $name): bool
+    {
+        if (preg_match('/^sub qa in charge actual hours$/i', $name) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^sub qa actual hours$/i', $name) === 1) {
+            return true;
+        }
+
+        if (preg_match('/^actual hours \(sub qa\)$/i', $name) === 1) {
+            return true;
+        }
+
+        return preg_match('/sub[\s_-]*qa[\s_-]*(in[\s_-]*charge[\s_-]*)?actual[\s_-]*hours/i', $name) === 1;
     }
 
     /**
@@ -290,15 +361,22 @@ class BacklogActivityService
                 }
 
                 $field = (string) ($change['field'] ?? 'actualHours');
+                $fieldKind = $this->resolveHoursFieldKind($change) ?? 'actual_hours';
 
                 $results[] = [
                     'issue_key' => $issueKey,
                     'project_id' => (int) ($activity['project']['id'] ?? 0),
+                    'project_key' => is_string($activity['project']['projectKey'] ?? null)
+                        ? $activity['project']['projectKey']
+                        : '',
+                    'project_name' => is_string($activity['project']['name'] ?? null)
+                        ? $activity['project']['name']
+                        : '',
                     'summary' => is_string($activity['content']['summary'] ?? null)
                         ? $activity['content']['summary']
                         : '',
                     'field' => $field,
-                    'field_kind' => $field === 'actualHours' ? 'actual_hours' : 'sub_actual_hours',
+                    'field_kind' => $fieldKind,
                     'before' => $before,
                     'after' => $after,
                     'worked_hours' => max(0, $after - $before),

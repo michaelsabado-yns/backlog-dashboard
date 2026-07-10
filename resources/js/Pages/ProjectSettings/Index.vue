@@ -112,15 +112,33 @@ const fieldRoleLabel = (role) => {
     return 'Sub person in charge';
   }
 
+  if (role === 'qa_in_charge') {
+    return 'QA in charge';
+  }
+
+  if (role === 'sub_qa_in_charge') {
+    return 'Sub QA in charge';
+  }
+
   return 'Unassigned';
 };
 
-const picSummary = (project) => {
+const roleSummary = (project) => {
+  const parts = [];
+
   if (project.person_in_charge_field) {
-    return project.person_in_charge_field.name;
+    parts.push(`PIC: ${project.person_in_charge_field.name}`);
   }
 
-  return 'No PIC field detected';
+  if (project.qa_in_charge_field) {
+    parts.push(`QA: ${project.qa_in_charge_field.name}`);
+  }
+
+  if (parts.length === 0) {
+    return 'No PIC/QA fields detected';
+  }
+
+  return parts.join(' · ');
 };
 
 onMounted(async () => {
@@ -279,7 +297,7 @@ onMounted(async () => {
 
                       <p class="mt-0.5 text-xs text-gray-500">
                         {{ project.member_count.toLocaleString() }} members
-                        · {{ picSummary(project) }}
+                        · {{ roleSummary(project) }}
                       </p>
                     </label>
 
@@ -301,6 +319,17 @@ onMounted(async () => {
                         <p class="mt-0.5">
                           {{
                             project.sub_person_in_charge_fields
+                              .map((field) => `${field.name} (${field.id})`)
+                              .join(', ')
+                          }}
+                        </p>
+                      </div>
+
+                      <div v-if="project.sub_qa_in_charge_fields?.length">
+                        <p class="font-medium text-gray-700">Sub QA fields</p>
+                        <p class="mt-0.5">
+                          {{
+                            project.sub_qa_in_charge_fields
                               .map((field) => `${field.name} (${field.id})`)
                               .join(', ')
                           }}

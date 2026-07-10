@@ -87,6 +87,38 @@ class BacklogIssueService
                     ),
                 );
             }
+
+            $qaField = $project['qa_in_charge_field'] ?? null;
+
+            if (is_array($qaField) && isset($qaField['id'])) {
+                $issues = array_merge(
+                    $issues,
+                    $this->fetchIssuesForCustomField(
+                        $trimmedApiKey,
+                        $baseFilters,
+                        $qaField,
+                        $user,
+                        $project['members'] ?? [],
+                    ),
+                );
+            }
+
+            foreach ($project['sub_qa_in_charge_fields'] ?? [] as $subQaField) {
+                if (! is_array($subQaField) || ! isset($subQaField['id'])) {
+                    continue;
+                }
+
+                $issues = array_merge(
+                    $issues,
+                    $this->fetchIssuesForCustomField(
+                        $trimmedApiKey,
+                        $baseFilters,
+                        $subQaField,
+                        $user,
+                        $project['members'] ?? [],
+                    ),
+                );
+            }
         }
 
         return $this->normalizeIssues($issues);

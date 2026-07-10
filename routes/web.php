@@ -52,6 +52,8 @@ Route::middleware([])->group(function () {
         ->name('daily-hours.index');
     Route::get('/daily-hours/my-issues', [DailyHoursTrackerController::class, 'myIssues'])
         ->name('daily-hours.my-issues');
+    Route::get('/daily-hours/users', [DailyHoursTrackerController::class, 'users'])
+        ->name('daily-hours.users');
     Route::get('/daily-hours/date-bounds', [DailyHoursTrackerController::class, 'dateBounds'])
         ->name('daily-hours.date-bounds');
     Route::get('/daily-hours/notifications', [DailyHoursTrackerController::class, 'notifications'])

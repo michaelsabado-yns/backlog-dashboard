@@ -18,8 +18,11 @@ const buildProjectKey = (projectIds) => {
   return [...ids].sort((a, b) => a - b).join(',');
 };
 
-const buildCacheKey = (date, projectIds, timezone) =>
-  `${date}|${buildProjectKey(projectIds)}|${timezone || getBrowserTimezone()}`;
+const buildCacheKey = (date, projectIds, timezone, userId = null) => {
+  const userKey = userId ? String(userId) : 'self';
+
+  return `${date}|${buildProjectKey(projectIds)}|${timezone || getBrowserTimezone()}|${userKey}`;
+};
 
 const readStore = () => {
   if (typeof window === 'undefined') {
@@ -44,8 +47,8 @@ const writeStore = (store) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 };
 
-export function loadDailyHoursCache(date, projectIds = null, timezone = null) {
-  const cacheKey = buildCacheKey(date, projectIds, timezone);
+export function loadDailyHoursCache(date, projectIds = null, timezone = null, userId = null) {
+  const cacheKey = buildCacheKey(date, projectIds, timezone, userId);
   const entry = readStore()[cacheKey];
 
   if (!entry || !Array.isArray(entry.items)) {
@@ -60,8 +63,8 @@ export function loadDailyHoursCache(date, projectIds = null, timezone = null) {
   };
 }
 
-export function saveDailyHoursCache(date, projectIds, payload, timezone = null) {
-  const cacheKey = buildCacheKey(date, projectIds, timezone);
+export function saveDailyHoursCache(date, projectIds, payload, timezone = null, userId = null) {
+  const cacheKey = buildCacheKey(date, projectIds, timezone, userId);
   const store = readStore();
 
   store[cacheKey] = {
@@ -73,8 +76,8 @@ export function saveDailyHoursCache(date, projectIds, payload, timezone = null) 
   writeStore(store);
 }
 
-export function getDailyHoursCacheSignature(date, projectIds = null, timezone = null) {
-  return loadDailyHoursCache(date, projectIds, timezone)?.signature ?? null;
+export function getDailyHoursCacheSignature(date, projectIds = null, timezone = null, userId = null) {
+  return loadDailyHoursCache(date, projectIds, timezone, userId)?.signature ?? null;
 }
 
 export function loadCachedHistoryStartsAt() {

@@ -1,6 +1,8 @@
 <script setup>
 import LoadingSpinner from '@/Components/LoadingSpinner.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
+import TextInput from '@/Components/TextInput.vue';
 import WeekdayDatePicker from '@/Components/WeekdayDatePicker.vue';
 import { useActualHoursHistory } from '@/composables/useActualHoursHistory';
 import {
@@ -21,6 +23,7 @@ import {
   clampToSelectableDate,
   firstWeekdayOnOrAfter,
 } from '@/utils/weekdayDate';
+import { buildDailyProgressReport } from '@/utils/dailyProgressReport';
 import { Head } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
@@ -60,9 +63,56 @@ const emptyReason = ref(null);
 const boundsLoading = ref(false);
 const boundsLoaded = ref(false);
 const expandedTicketKey = ref(null);
+const showProgressReport = ref(false);
+const reportCopied = ref(false);
+const currentUser = ref(null);
+const browsableUsers = ref([]);
+const selectedTrackedUserId = ref(null);
+const userSearch = ref('');
+const usersLoading = ref(false);
 
 const activeProjectIds = computed(() => getSelectedProjectIds());
 const projectSelectionKey = computed(() => activeProjectIds.value.slice().sort((a, b) => a - b).join(','));
+const trackedUserId = computed(() => selectedTrackedUserId.value ?? currentUser.value?.id ?? null);
+const isViewingSelf = computed(
+  () => currentUser.value?.id && trackedUserId.value === currentUser.value.id,
+);
+const trackedUserLabel = computed(() => {
+  if (isViewingSelf.value) {
+    return currentUser.value?.name ? `You (${currentUser.value.name})` : 'You';
+  }
+
+  const match = browsableUsers.value.find((user) => user.id === trackedUserId.value);
+
+  if (match?.name) {
+    return match.user_id ? `${match.name} (${match.user_id})` : match.name;
+  }
+
+  return 'Selected user';
+});
+const filteredBrowsableUsers = computed(() => {
+  const query = userSearch.value.trim().toLowerCase();
+
+  return browsableUsers.value.filter((user) => {
+    if (currentUser.value?.id && user.id === currentUser.value.id) {
+      return false;
+    }
+
+    if (selectedTrackedUserId.value && user.id === selectedTrackedUserId.value) {
+      return true;
+    }
+
+    if (!query) {
+      return true;
+    }
+
+    return [user.name, user.user_id].some((value) =>
+      String(value ?? '')
+        .toLowerCase()
+        .includes(query),
+    );
+  });
+});
 const hasProjectSelection = computed(() => !isConfigured.value || activeProjectIds.value.length > 0);
 const scopedProjectCount = computed(() => scopedProjectIds.value.length);
 const browserTimezone = getBrowserTimezone();
@@ -83,16 +133,40 @@ const historyRangeLabel = computed(() => {
 const isBusy = computed(() => loading.value || refreshing.value);
 
 const displayTickets = computed(() =>
-  [...fetchedTickets.value].sort(
-    (a, b) =>
-      (b.worked_hours ?? 0) - (a.worked_hours ?? 0) || a.issue_key.localeCompare(b.issue_key),
-  ),
+  [...fetchedTickets.value].sort((a, b) => {
+    const updatedCompare = String(b.updated_at ?? '').localeCompare(String(a.updated_at ?? ''));
+
+    if (updatedCompare !== 0) {
+      return updatedCompare;
+    }
+
+    return a.issue_key.localeCompare(b.issue_key);
+  }),
 );
 
 const totalHours = computed(() =>
   displayTickets.value.reduce((sum, ticket) => sum + Number(ticket.worked_hours ?? 0), 0),
 );
 const ticketCount = computed(() => displayTickets.value.length);
+const progressReportText = computed(() => buildDailyProgressReport(displayTickets.value));
+
+const copyProgressReport = async () => {
+  const text = progressReportText.value;
+
+  if (!text) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    reportCopied.value = true;
+    window.setTimeout(() => {
+      reportCopied.value = false;
+    }, 2000);
+  } catch (_error) {
+    loadError.value = 'Could not copy the report to your clipboard.';
+  }
+};
 
 const formatDisplayDate = (value) => {
   if (!value) {
@@ -113,6 +187,14 @@ const formatHours = (hours) => `${Number(hours ?? 0).toFixed(1)}h`;
 const formatFieldLabel = (change) => {
   if (change.field_kind === 'sub_actual_hours') {
     return change.field || 'Sub Actual Hours';
+  }
+
+  if (change.field_kind === 'qa_actual_hours') {
+    return change.field || 'QA Actual Hours';
+  }
+
+  if (change.field_kind === 'sub_qa_actual_hours') {
+    return change.field || 'Sub QA Actual Hours';
   }
 
   return 'Actual Hours';
@@ -145,7 +227,7 @@ const formatFetchedAt = (isoString) => {
 };
 
 const applyCachedDay = (date) => {
-  const cached = loadDailyHoursCache(date, activeProjectIds.value, browserTimezone);
+  const cached = loadDailyHoursCache(date, activeProjectIds.value, browserTimezone, trackedUserId.value);
 
   if (!cached) {
     fetchedTickets.value = [];
@@ -202,7 +284,7 @@ const snapshotMyIssues = async ({ force = false } = {}) => {
   const projectIds = activeProjectIds.value;
   const cachedSignature = force
     ? null
-    : getDailyHoursCacheSignature(selectedDate.value, projectIds, browserTimezone);
+    : getDailyHoursCacheSignature(selectedDate.value, projectIds, browserTimezone, trackedUserId.value);
 
   const response = await window.axios.get(route('daily-hours.my-issues'), {
     params: {
@@ -210,6 +292,7 @@ const snapshotMyIssues = async ({ force = false } = {}) => {
       timezone: browserTimezone,
       signature: cachedSignature ?? undefined,
       force: force ? 1 : undefined,
+      user_id: selectedTrackedUserId.value ?? undefined,
     },
   });
 
@@ -217,7 +300,7 @@ const snapshotMyIssues = async ({ force = false } = {}) => {
   let items = Array.isArray(data.items) ? data.items : [];
 
   if (data.from_cache && items.length === 0 && data.signature) {
-    const localCache = loadDailyHoursCache(selectedDate.value, projectIds, browserTimezone);
+    const localCache = loadDailyHoursCache(selectedDate.value, projectIds, browserTimezone, trackedUserId.value);
 
     if (localCache?.signature === data.signature && localCache.items.length > 0) {
       items = localCache.items;
@@ -256,23 +339,35 @@ const snapshotMyIssues = async ({ force = false } = {}) => {
       signature: signature.value,
     },
     browserTimezone,
+    trackedUserId.value,
   );
 
-  persistSnapshots(items);
+  if (isViewingSelf.value) {
+    persistSnapshots(items);
+  }
 };
 
 const loadDateBounds = async () => {
   boundsLoading.value = true;
 
   try {
-    const cachedStartsAt = loadCachedHistoryStartsAt();
+    if (isViewingSelf.value) {
+      const cachedStartsAt = loadCachedHistoryStartsAt();
 
-    if (cachedStartsAt) {
-      historyStartsAt.value = cachedStartsAt;
+      if (cachedStartsAt) {
+        historyStartsAt.value = cachedStartsAt;
+      }
+    } else {
+      historyStartsAt.value = null;
+      historyEndsAt.value = null;
+      earliestActivityAt.value = null;
     }
 
     const response = await window.axios.get(route('daily-hours.date-bounds'), {
-      params: { timezone: browserTimezone },
+      params: {
+        timezone: browserTimezone,
+        user_id: selectedTrackedUserId.value ?? undefined,
+      },
     });
 
     const startsAt = response?.data?.history_starts_at ?? null;
@@ -282,7 +377,7 @@ const loadDateBounds = async () => {
     historyEndsAt.value = endsAt;
     earliestActivityAt.value = response?.data?.earliest_activity_at ?? null;
 
-    if (startsAt) {
+    if (startsAt && isViewingSelf.value) {
       saveCachedHistoryStartsAt(startsAt);
     }
 
@@ -301,6 +396,22 @@ const loadDateBounds = async () => {
     boundsLoaded.value = historyStartsAt.value !== null;
   } finally {
     boundsLoading.value = false;
+  }
+};
+
+const loadUsers = async () => {
+  usersLoading.value = true;
+
+  try {
+    const response = await window.axios.get(route('daily-hours.users'));
+    const data = response?.data ?? {};
+
+    currentUser.value = data.myself ?? null;
+    browsableUsers.value = Array.isArray(data.users) ? data.users : [];
+  } catch (_error) {
+    browsableUsers.value = [];
+  } finally {
+    usersLoading.value = false;
   }
 };
 
@@ -328,6 +439,7 @@ const refreshBacklogData = async ({ force = false } = {}) => {
 
 onMounted(async () => {
   cleanupOldHistory();
+  await loadUsers();
   applyCachedDay(selectedDate.value);
   await loadDateBounds();
   await refreshBacklogData();
@@ -354,8 +466,24 @@ watch(projectSelectionKey, (nextKey, previousKey) => {
     return;
   }
 
+  loadUsers();
   applyCachedDay(selectedDate.value);
   refreshBacklogData({ force: true });
+});
+
+watch(selectedTrackedUserId, async (nextUserId, previousUserId) => {
+  if (previousUserId === undefined && nextUserId === null) {
+    return;
+  }
+
+  if (nextUserId === previousUserId) {
+    return;
+  }
+
+  userSearch.value = '';
+  applyCachedDay(selectedDate.value);
+  await loadDateBounds();
+  await refreshBacklogData({ force: true });
 });
 
 watch(historyStartsAt, (minDate) => {
@@ -400,7 +528,12 @@ watch(selectedDate, (date, previousDate) => {
 
   <PublicLayout>
     <template #header>
-      <h2 class="text-xl font-semibold leading-tight text-gray-800">Daily Hours Tracker</h2>
+      <div>
+        <h2 class="text-xl font-semibold leading-tight text-gray-800">Daily Hours Tracker</h2>
+        <p v-if="currentUser" class="mt-0.5 text-sm text-gray-500">
+          Viewing {{ trackedUserLabel }}
+        </p>
+      </div>
     </template>
 
     <div class="py-5">
@@ -416,6 +549,42 @@ watch(selectedDate, (date, previousDate) => {
 
         <template v-else>
           <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+            <div class="mb-3 space-y-2 border-b border-gray-100 pb-3">
+              <label class="block text-xs font-medium text-gray-600">Tracked user</label>
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select
+                  v-model="selectedTrackedUserId"
+                  class="block w-full rounded-md border-gray-300 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:max-w-xs"
+                  :disabled="isBusy || usersLoading"
+                >
+                  <option :value="null">
+                    Me{{ currentUser?.name ? ` (${currentUser.name})` : '' }}
+                  </option>
+                  <option
+                    v-for="user in filteredBrowsableUsers"
+                    :key="user.id"
+                    :value="user.id"
+                  >
+                    {{ user.name }}{{ user.user_id ? ` (${user.user_id})` : '' }}
+                  </option>
+                </select>
+
+                <TextInput
+                  v-model="userSearch"
+                  type="search"
+                  class="block w-full py-2 text-sm shadow-sm sm:max-w-xs"
+                  placeholder="Search users…"
+                  :disabled="usersLoading"
+                />
+              </div>
+              <p class="text-[11px] text-gray-400">
+                <span v-if="usersLoading">Loading users from enabled projects…</span>
+                <span v-else>
+                  {{ browsableUsers.length.toLocaleString() }} project member(s) available
+                </span>
+              </p>
+            </div>
+
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div class="min-w-0 flex-1 space-y-1">
                 <WeekdayDatePicker
@@ -496,7 +665,35 @@ watch(selectedDate, (date, previousDate) => {
                     {{ ticketCount === 1 ? 'ticket' : 'tickets' }}
                   </span>
                 </div>
-                <span class="text-xs text-gray-400">{{ formatDisplayDate(selectedDate) }}</span>
+                <div class="flex flex-wrap items-center gap-2">
+                  <SecondaryButton
+                    v-if="displayTickets.length > 0"
+                    type="button"
+                    class="normal-case tracking-normal"
+                    @click="showProgressReport = !showProgressReport"
+                  >
+                    {{ showProgressReport ? 'Hide report' : 'Progress report' }}
+                  </SecondaryButton>
+                  <SecondaryButton
+                    v-if="displayTickets.length > 0"
+                    type="button"
+                    class="normal-case tracking-normal"
+                    @click="copyProgressReport"
+                  >
+                    {{ reportCopied ? 'Copied!' : 'Copy report' }}
+                  </SecondaryButton>
+                  <span class="text-xs text-gray-400">{{ formatDisplayDate(selectedDate) }}</span>
+                </div>
+              </div>
+
+              <div
+                v-if="showProgressReport && progressReportText"
+                class="border-b border-gray-200 bg-gray-50 px-3 py-3 sm:px-4"
+              >
+                <p class="mb-2 text-xs font-medium text-gray-600">Ready to paste</p>
+                <pre
+                  class="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border border-gray-200 bg-white p-3 font-mono text-xs leading-relaxed text-gray-800"
+                >{{ progressReportText }}</pre>
               </div>
 
               <div

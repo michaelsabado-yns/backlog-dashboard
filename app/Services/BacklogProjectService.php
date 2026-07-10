@@ -34,6 +34,22 @@ class BacklogProjectService
         '/sub[\s_-]*in[\s_-]*charge/i',
     ];
 
+    private const QA_IN_CHARGE_PATTERNS = [
+        '/^qa in charge$/i',
+        '/^qa担当$/u',
+        '/^qa担当者$/u',
+        '/qa[\s_-]*in[\s_-]*charge/i',
+        '/qa担当/u',
+    ];
+
+    private const SUB_QA_PATTERNS = [
+        '/^sub qa in charge$/i',
+        '/サブqa担当/ui',
+        '/副qa担当/ui',
+        '/sub[\s_-]*qa[\s_-]*in[\s_-]*charge/i',
+        '/sub[\s_-]*qa$/i',
+    ];
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -120,6 +136,8 @@ class BacklogProjectService
                 'uses_standard_assignee' => false,
                 'person_in_charge_field' => $detectedFields['person_in_charge'],
                 'sub_person_in_charge_fields' => $detectedFields['sub_person_in_charge'],
+                'qa_in_charge_field' => $detectedFields['qa_in_charge'],
+                'sub_qa_in_charge_fields' => $detectedFields['sub_qa_in_charge'],
             ];
         }
 
@@ -205,23 +223,23 @@ class BacklogProjectService
     /**
      * @param  array<int, array<string, mixed>>  $customFields
      * @param  array<int, int>  $configuredSubFieldIds
-     * @return array{person_in_charge: array<string, mixed>|null, sub_person_in_charge: array<int, array<string, mixed>>}
+     * @return array{
+     *     person_in_charge: array<string, mixed>|null,
+     *     sub_person_in_charge: array<int, array<string, mixed>>,
+     *     qa_in_charge: array<string, mixed>|null,
+     *     sub_qa_in_charge: array<int, array<string, mixed>>
+     * }
      */
     private function detectFieldRoles(array $customFields): array
     {
         $personInCharge = null;
         $subFields = [];
+        $qaInCharge = null;
+        $subQaFields = [];
 
         foreach ($customFields as $field) {
             $name = (string) $field['name'];
-            $role = null;
-
-            if ($this->matchesPersonInChargeName($name)) {
-                $role = 'person_in_charge';
-            } elseif ($this->matchesSubAssigneeName($name)) {
-                $role = 'sub_person_in_charge';
-            }
-
+            $role = $this->resolveFieldRole($name);
             $fieldWithRole = array_merge($field, ['role' => $role]);
 
             if ($role === 'person_in_charge' && $personInCharge === null) {
@@ -231,11 +249,21 @@ class BacklogProjectService
             if ($role === 'sub_person_in_charge') {
                 $subFields[] = $fieldWithRole;
             }
+
+            if ($role === 'qa_in_charge' && $qaInCharge === null) {
+                $qaInCharge = $fieldWithRole;
+            }
+
+            if ($role === 'sub_qa_in_charge') {
+                $subQaFields[] = $fieldWithRole;
+            }
         }
 
         return [
             'person_in_charge' => $personInCharge,
             'sub_person_in_charge' => $subFields,
+            'qa_in_charge' => $qaInCharge,
+            'sub_qa_in_charge' => $subQaFields,
         ];
     }
 
@@ -247,16 +275,30 @@ class BacklogProjectService
     {
         return array_map(function (array $field): array {
             $name = (string) $field['name'];
-            $role = null;
 
-            if ($this->matchesPersonInChargeName($name)) {
-                $role = 'person_in_charge';
-            } elseif ($this->matchesSubAssigneeName($name)) {
-                $role = 'sub_person_in_charge';
-            }
-
-            return array_merge($field, ['role' => $role]);
+            return array_merge($field, ['role' => $this->resolveFieldRole($name)]);
         }, $customFields);
+    }
+
+    private function resolveFieldRole(string $name): ?string
+    {
+        if ($this->matchesSubQaInChargeName($name)) {
+            return 'sub_qa_in_charge';
+        }
+
+        if ($this->matchesSubAssigneeName($name)) {
+            return 'sub_person_in_charge';
+        }
+
+        if ($this->matchesQaInChargeName($name)) {
+            return 'qa_in_charge';
+        }
+
+        if ($this->matchesPersonInChargeName($name)) {
+            return 'person_in_charge';
+        }
+
+        return null;
     }
 
     private function matchesPersonInChargeName(string $name): bool
@@ -276,7 +318,45 @@ class BacklogProjectService
 
     private function matchesSubAssigneeName(string $name): bool
     {
+        if ($this->matchesSubQaInChargeName($name)) {
+            return false;
+        }
+
         foreach (self::SUB_ASSIGNEE_PATTERNS as $pattern) {
+            if (preg_match($pattern, $name) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function matchesQaInChargeName(string $name): bool
+    {
+        if (preg_match('/サブ|副|sub/ui', $name) === 1) {
+            return false;
+        }
+
+        if (preg_match('/actual[\s_-]*hours|実績/u', $name) === 1) {
+            return false;
+        }
+
+        foreach (self::QA_IN_CHARGE_PATTERNS as $pattern) {
+            if (preg_match($pattern, $name) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function matchesSubQaInChargeName(string $name): bool
+    {
+        if (preg_match('/actual[\s_-]*hours|実績/u', $name) === 1) {
+            return false;
+        }
+
+        foreach (self::SUB_QA_PATTERNS as $pattern) {
             if (preg_match($pattern, $name) === 1) {
                 return true;
             }

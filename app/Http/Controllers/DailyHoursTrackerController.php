@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\BacklogActivityService;
 use App\Services\BacklogNotificationService;
 use App\Services\BacklogProjectService;
+use App\Services\BacklogUserService;
 use App\Services\DailyHoursCacheService;
 use App\Services\NotificationTransformer;
 use App\Support\BacklogApiKeyResolver;
@@ -30,6 +31,7 @@ class DailyHoursTrackerController extends Controller
         Request $request,
         BacklogActivityService $backlogActivityService,
         BacklogProjectService $backlogProjectService,
+        BacklogUserService $backlogUserService,
         DailyHoursCacheService $dailyHoursCacheService,
     ): JsonResponse {
         $apiKey = BacklogApiKeyResolver::resolve($request);
@@ -43,6 +45,7 @@ class DailyHoursTrackerController extends Controller
             'signature' => ['nullable', 'string', 'max:128'],
             'force' => ['nullable', 'boolean'],
             'timezone' => ['nullable', 'timezone'],
+            'user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $date = $validated['date'] ?? now()->toDateString();
@@ -50,6 +53,19 @@ class DailyHoursTrackerController extends Controller
         $clientSignature = $validated['signature'] ?? null;
         $timezone = $validated['timezone'] ?? null;
         $projectIds = BacklogProjectResolver::resolve($request);
+        $trackedUser = $this->resolveTrackedUser(
+            $backlogUserService,
+            $backlogProjectService,
+            $apiKey,
+            $projectIds,
+            $validated['user_id'] ?? null,
+        );
+
+        if ($trackedUser === null) {
+            return response()->json(['message' => 'Failed to resolve tracked user.'], 422);
+        }
+
+        $trackedUserId = (int) $trackedUser['id'];
 
         $activityChanges = $backlogActivityService->getActualHoursChangesByIssueKey(
             $apiKey,
@@ -57,13 +73,14 @@ class DailyHoursTrackerController extends Controller
             $projectIds,
             $date,
             $timezone,
+            $trackedUserId,
         );
-        $historyBounds = $backlogActivityService->getActivityHistoryBounds($apiKey, $timezone);
+        $historyBounds = $backlogActivityService->getActivityHistoryBounds($apiKey, $timezone, $trackedUserId);
         $signature = $dailyHoursCacheService->buildSignature($activityChanges, $timezone);
         $dateMeta = $this->buildDateMetadata($date, $historyBounds, $backlogActivityService);
 
         if (! $forceRefresh) {
-            $cached = $dailyHoursCacheService->get($apiKey, $date, $projectIds, $signature, $timezone);
+            $cached = $dailyHoursCacheService->get($apiKey, $date, $projectIds, $signature, $timezone, $trackedUserId);
 
             if ($cached !== null || ($clientSignature !== null && $clientSignature === $signature)) {
                 $payload = $cached ?? [
@@ -80,6 +97,7 @@ class DailyHoursTrackerController extends Controller
                     'from_cache' => true,
                     'change_count' => $this->countHourChanges($activityChanges),
                     'scoped_project_ids' => $this->resolveScopedProjectIds($backlogProjectService, $apiKey, $projectIds),
+                    'tracked_user' => $trackedUser,
                 ], $dateMeta));
             }
         }
@@ -101,11 +119,18 @@ class DailyHoursTrackerController extends Controller
             $items[] = $item;
         }
 
-        usort($items, static fn (array $a, array $b): int => ($b['worked_hours'] <=> $a['worked_hours'])
-            ?: strcmp($a['issue_key'], $b['issue_key']));
+        usort($items, static function (array $a, array $b): int {
+            $updatedCompare = strcmp((string) ($b['updated_at'] ?? ''), (string) ($a['updated_at'] ?? ''));
+
+            if ($updatedCompare !== 0) {
+                return $updatedCompare;
+            }
+
+            return strcmp($a['issue_key'], $b['issue_key']);
+        });
 
         $fetchedAt = now()->toIso8601String();
-        $dailyHoursCacheService->put($apiKey, $date, $projectIds, $signature, $items, $timezone);
+        $dailyHoursCacheService->put($apiKey, $date, $projectIds, $signature, $items, $timezone, $trackedUserId);
 
         return response()->json(array_merge([
             'items' => $items,
@@ -115,12 +140,37 @@ class DailyHoursTrackerController extends Controller
             'from_cache' => false,
             'change_count' => $this->countHourChanges($activityChanges),
             'scoped_project_ids' => $this->resolveScopedProjectIds($backlogProjectService, $apiKey, $projectIds),
+            'tracked_user' => $trackedUser,
         ], $dateMeta));
+    }
+
+    public function users(
+        Request $request,
+        BacklogUserService $backlogUserService,
+        BacklogProjectService $backlogProjectService,
+    ): JsonResponse {
+        $apiKey = BacklogApiKeyResolver::resolve($request);
+
+        if ($apiKey === null) {
+            return response()->json(['message' => 'Missing Backlog API key.'], 401);
+        }
+
+        $projectIds = BacklogProjectResolver::resolve($request);
+        $myself = $backlogUserService->getMyself($apiKey);
+        $users = $backlogUserService->getBrowsableUsers($apiKey, $backlogProjectService, $projectIds);
+
+        return response()->json([
+            'users' => $users,
+            'myself' => $myself,
+            'fetched_at' => now()->toIso8601String(),
+        ]);
     }
 
     public function dateBounds(
         Request $request,
         BacklogActivityService $backlogActivityService,
+        BacklogUserService $backlogUserService,
+        BacklogProjectService $backlogProjectService,
     ): JsonResponse {
         $apiKey = BacklogApiKeyResolver::resolve($request);
 
@@ -130,15 +180,30 @@ class DailyHoursTrackerController extends Controller
 
         $validated = $request->validate([
             'timezone' => ['nullable', 'timezone'],
+            'user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $timezone = $validated['timezone'] ?? null;
-        $bounds = $backlogActivityService->getActivityHistoryBounds($apiKey, $timezone);
+        $projectIds = BacklogProjectResolver::resolve($request);
+        $trackedUser = $this->resolveTrackedUser(
+            $backlogUserService,
+            $backlogProjectService,
+            $apiKey,
+            $projectIds,
+            $validated['user_id'] ?? null,
+        );
+
+        if ($trackedUser === null) {
+            return response()->json(['message' => 'Failed to resolve tracked user.'], 422);
+        }
+
+        $bounds = $backlogActivityService->getActivityHistoryBounds($apiKey, $timezone, (int) $trackedUser['id']);
         $tz = $timezone ?: (string) config('app.timezone', 'UTC');
 
         return response()->json(array_merge($bounds, [
             'max_date' => now()->timezone($tz)->toDateString(),
             'fetched_at' => now()->toIso8601String(),
+            'tracked_user' => $trackedUser,
         ]));
     }
 
@@ -214,6 +279,12 @@ class DailyHoursTrackerController extends Controller
             'summary' => is_string($last['summary'] ?? null) && $last['summary'] !== ''
                 ? $last['summary']
                 : $issueKey,
+            'project_key' => is_string($last['project_key'] ?? null) ? $last['project_key'] : '',
+            'project_name' => is_string($last['project_name'] ?? null) && $last['project_name'] !== ''
+                ? $last['project_name']
+                : (is_string($last['project_key'] ?? null) && $last['project_key'] !== ''
+                    ? $last['project_key']
+                    : $this->resolveProjectKeyFromIssueKey($issueKey)),
             'actual_hours' => (float) $last['after'],
             'backlog_url' => $baseUrl.'/view/'.$issueKey,
             'updated_at' => $last['changed_at'],
@@ -233,6 +304,45 @@ class DailyHoursTrackerController extends Controller
                 'source' => $change['source'] ?? 'user_activity',
             ], $changes),
         ];
+    }
+
+    private function resolveProjectKeyFromIssueKey(string $issueKey): string
+    {
+        if (preg_match('/^(.+)-\d+$/', $issueKey, $matches) === 1) {
+            return $matches[1];
+        }
+
+        return 'Unknown project';
+    }
+
+    /**
+     * @param  array<int, int>|null  $projectIds
+     * @return array{id: int, name: string, user_id: string}|null
+     */
+    private function resolveTrackedUser(
+        BacklogUserService $backlogUserService,
+        BacklogProjectService $backlogProjectService,
+        string $apiKey,
+        ?array $projectIds,
+        ?int $requestedUserId,
+    ): ?array {
+        $myself = $backlogUserService->getMyself($apiKey);
+
+        if ($myself === null) {
+            return null;
+        }
+
+        if ($requestedUserId === null || $requestedUserId === (int) $myself['id']) {
+            return $myself;
+        }
+
+        foreach ($backlogUserService->getBrowsableUsers($apiKey, $backlogProjectService, $projectIds) as $user) {
+            if ((int) $user['id'] === $requestedUserId) {
+                return $user;
+            }
+        }
+
+        return null;
     }
 
     public function notifications(

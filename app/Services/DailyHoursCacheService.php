@@ -40,9 +40,9 @@ class DailyHoursCacheService
      * @param  array<int, int>|null  $projectIds
      * @return array{items: array<int, array<string, mixed>>, signature: string, fetched_at: string}|null
      */
-    public function get(string $apiKey, string $date, ?array $projectIds, string $signature, ?string $timezone = null): ?array
+    public function get(string $apiKey, string $date, ?array $projectIds, string $signature, ?string $timezone = null, ?int $userId = null): ?array
     {
-        $cached = Cache::get($this->cacheKey($apiKey, $date, $projectIds, $timezone));
+        $cached = Cache::get($this->cacheKey($apiKey, $date, $projectIds, $timezone, $userId));
 
         if (! is_array($cached) || ($cached['signature'] ?? null) !== $signature) {
             return null;
@@ -55,9 +55,9 @@ class DailyHoursCacheService
      * @param  array<int, int>|null  $projectIds
      * @param  array<int, array<string, mixed>>  $items
      */
-    public function put(string $apiKey, string $date, ?array $projectIds, string $signature, array $items, ?string $timezone = null): void
+    public function put(string $apiKey, string $date, ?array $projectIds, string $signature, array $items, ?string $timezone = null, ?int $userId = null): void
     {
-        Cache::put($this->cacheKey($apiKey, $date, $projectIds, $timezone), [
+        Cache::put($this->cacheKey($apiKey, $date, $projectIds, $timezone, $userId), [
             'items' => $items,
             'signature' => $signature,
             'fetched_at' => now()->toIso8601String(),
@@ -67,7 +67,7 @@ class DailyHoursCacheService
     /**
      * @param  array<int, int>|null  $projectIds
      */
-    private function cacheKey(string $apiKey, string $date, ?array $projectIds, ?string $timezone = null): string
+    private function cacheKey(string $apiKey, string $date, ?array $projectIds, ?string $timezone = null, ?int $userId = null): string
     {
         $projectKey = 'all';
 
@@ -78,11 +78,13 @@ class DailyHoursCacheService
         }
 
         $timezoneKey = is_string($timezone) && $timezone !== '' ? $timezone : 'UTC';
+        $userKey = $userId !== null && $userId > 0 ? (string) $userId : 'self';
 
         return 'backlog.daily_hours.'
             .hash('sha256', trim($apiKey))
             .'.'.$date
             .'.'.hash('sha256', $projectKey)
-            .'.'.hash('sha256', $timezoneKey);
+            .'.'.hash('sha256', $timezoneKey)
+            .'.'.$userKey;
     }
 }
