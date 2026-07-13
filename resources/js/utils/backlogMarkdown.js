@@ -43,6 +43,10 @@ function postprocessHtml(html) {
     .replace(
       /<a href="([^"]+)">/g,
       '<a href="$1" target="_blank" rel="noopener noreferrer">',
+    )
+    .replace(
+      /<table\b[\s\S]*?<\/table>/gi,
+      (tableHtml) => `<div class="backlog-table-wrap">${tableHtml}</div>`,
     );
 }
 
@@ -60,7 +64,7 @@ export function renderBacklogMarkdown(content) {
 
   return DOMPurify.sanitize(rendered, {
     ADD_ATTR: ['target', 'rel', 'class'],
-    ADD_TAGS: ['span'],
+    ADD_TAGS: ['span', 'div'],
   });
 }
 

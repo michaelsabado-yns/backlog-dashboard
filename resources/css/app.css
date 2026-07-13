@@ -17,15 +17,19 @@
     }
 
     .backlog-markdown--compact :where(h1) {
-        @apply text-base;
+        @apply mb-1 border-b-0 pb-0 text-base;
     }
 
     .backlog-markdown--compact :where(h2, h3, h4) {
-        @apply text-sm;
+        @apply mb-1 border-b-0 pb-0 text-sm;
     }
 
     .backlog-markdown--compact :where(pre) {
         @apply max-h-16 overflow-hidden p-2 text-xs;
+    }
+
+    .backlog-markdown--compact :where(.backlog-table-wrap) {
+        @apply my-1;
     }
 
     .backlog-markdown--full {
@@ -37,31 +41,63 @@
     }
 
     .backlog-markdown :where(h1) {
-        @apply text-xl;
+        @apply mb-3 border-b-2 border-gray-300 pb-2 text-xl;
     }
 
     .backlog-markdown :where(h2) {
-        @apply text-lg;
+        @apply mb-2 border-b border-gray-200 pb-1.5 text-lg;
     }
 
-    .backlog-markdown :where(h3, h4) {
-        @apply text-base;
+    .backlog-markdown :where(h3) {
+        @apply mb-2 border-b border-gray-100 pb-1 text-base;
     }
 
-    .backlog-markdown :where(p, ul, ol, blockquote, pre) {
+    .backlog-markdown :where(h4) {
+        @apply mb-1 text-base;
+    }
+
+    .backlog-markdown :where(p) {
+        @apply my-2 text-gray-700;
+    }
+
+    .backlog-markdown :where(ul, ol, blockquote, pre) {
         @apply text-gray-700;
     }
 
     .backlog-markdown :where(ul, ol) {
-        @apply list-inside list-disc space-y-1 ps-2;
+        @apply my-2 list-outside space-y-1 ps-6;
+    }
+
+    .backlog-markdown :where(ul) {
+        @apply list-disc;
     }
 
     .backlog-markdown :where(ol) {
         @apply list-decimal;
     }
 
+    .backlog-markdown :where(ul ul) {
+        @apply list-[circle];
+    }
+
+    .backlog-markdown :where(ul ul ul) {
+        @apply list-[square];
+    }
+
+    .backlog-markdown :where(li) {
+        @apply my-0.5 ps-1;
+    }
+
+    .backlog-markdown :where(li > ul, li > ol) {
+        @apply mb-1 mt-1;
+    }
+
+    .backlog-markdown :where(li > p) {
+        @apply my-1;
+    }
+
     .backlog-markdown :where(blockquote) {
-        @apply rounded-md border-s-4 border-gray-200 bg-gray-50 px-4 py-3 text-gray-600;
+        @apply my-3 rounded-md border-s-4 border-gray-200 bg-gray-50 px-4 py-3 text-gray-600;
     }
 
     .backlog-markdown :where(a) {
@@ -73,7 +109,7 @@
     }
 
     .backlog-markdown :where(pre) {
-        @apply overflow-x-auto rounded-lg bg-gray-900 p-4 text-gray-100;
+        @apply my-3 overflow-x-auto rounded-lg bg-gray-900 p-4 text-gray-100;
     }
 
     .backlog-markdown :where(pre code) {
@@ -81,10 +117,38 @@
     }
 
     .backlog-markdown :where(hr) {
-        @apply border-gray-200;
+        @apply my-4 border-gray-300;
     }
 
     .backlog-markdown :where(.backlog-mention) {
         @apply rounded bg-indigo-50 px-1 font-medium text-indigo-700;
+    }
+
+    .backlog-markdown :where(.backlog-table-wrap) {
+        @apply my-3 max-w-full overflow-x-auto rounded-md border border-gray-200;
+    }
+
+    .backlog-markdown :where(table) {
+        @apply w-max min-w-full border-collapse text-left text-sm text-gray-700;
+    }
+
+    .backlog-markdown :where(thead) {
+        @apply bg-gray-50;
+    }
+
+    .backlog-markdown :where(th) {
+        @apply border border-gray-200 px-3 py-2 font-semibold text-gray-900;
+    }
+
+    .backlog-markdown :where(td) {
+        @apply border border-gray-200 px-3 py-2 align-top;
+    }
+
+    .backlog-markdown :where(tr:nth-child(even) td) {
+        @apply bg-gray-50/60;
+    }
+
+    .backlog-markdown :where(img) {
+        @apply my-2 max-w-full rounded-md;
     }
 }
