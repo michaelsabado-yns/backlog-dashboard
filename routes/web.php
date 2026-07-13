@@ -4,6 +4,7 @@ use App\Http\Controllers\DailyHoursTrackerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectSettingsController;
+use App\Http\Controllers\ThemeController;
 use App\Services\BacklogNotificationService;
 use App\Support\BacklogApiKeyResolver;
 use Illuminate\Foundation\Application;
@@ -42,6 +43,8 @@ Route::get('/test-backlog', function (
 
     return $service->getNotifications($apiKey);
 });
+
+Route::post('/theme', [ThemeController::class, 'update'])->name('theme.update');
 
 Route::middleware([])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])

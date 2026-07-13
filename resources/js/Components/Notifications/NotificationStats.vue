@@ -62,17 +62,17 @@ const formatTimestamp = (isoString) => {
 <template>
   <div class="space-y-2">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-gray-600">
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
         <span>
-          <span class="font-semibold text-gray-900">{{ totalCount.toLocaleString() }}</span>
+          <span class="font-semibold text-gray-900 dark:text-gray-100">{{ totalCount.toLocaleString() }}</span>
           total
         </span>
         <span>
-          <span class="font-semibold text-green-700">{{ unreadCount.toLocaleString() }}</span>
+          <span class="font-semibold text-green-700 dark:text-green-300">{{ unreadCount.toLocaleString() }}</span>
           unread
         </span>
         <span>
-          <span class="font-semibold text-gray-800">{{ readCount.toLocaleString() }}</span>
+          <span class="font-semibold text-gray-800 dark:text-gray-200">{{ readCount.toLocaleString() }}</span>
           read
         </span>
       </div>
@@ -100,7 +100,7 @@ const formatTimestamp = (isoString) => {
       </div>
     </div>
 
-    <p class="text-xs text-gray-400">
+    <p class="text-xs text-gray-400 dark:text-gray-500">
       Fetched {{ formatTimestamp(refreshedAt) }}
       <span v-if="fromCache">· cached</span>
       · Backlog unread {{ backlogUnreadCount.toLocaleString() }}

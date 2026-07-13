@@ -4,16 +4,16 @@
 
 @layer components {
     .backlog-markdown {
-        @apply text-sm leading-relaxed text-gray-800;
+        @apply text-sm leading-relaxed text-gray-800 dark:text-gray-200;
     }
 
     .backlog-markdown--compact {
-        @apply relative max-h-[5.5rem] overflow-hidden text-sm leading-relaxed text-gray-700;
+        @apply relative max-h-[5.5rem] overflow-hidden text-sm leading-relaxed text-gray-700 dark:text-gray-300;
     }
 
     .backlog-markdown--compact::after {
         content: '';
-        @apply pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent;
+        @apply pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent dark:from-gray-800 dark:via-gray-800/80;
     }
 
     .backlog-markdown--compact :where(h1) {
@@ -37,19 +37,19 @@
     }
 
     .backlog-markdown :where(h1, h2, h3, h4) {
-        @apply font-semibold text-gray-900;
+        @apply font-semibold text-gray-900 dark:text-gray-100;
     }
 
     .backlog-markdown :where(h1) {
-        @apply mb-3 border-b-2 border-gray-300 pb-2 text-xl;
+        @apply mb-3 border-b-2 border-gray-300 pb-2 text-xl dark:border-gray-600;
     }
 
     .backlog-markdown :where(h2) {
-        @apply mb-2 border-b border-gray-200 pb-1.5 text-lg;
+        @apply mb-2 border-b border-gray-200 pb-1.5 text-lg dark:border-gray-700;
     }
 
     .backlog-markdown :where(h3) {
-        @apply mb-2 border-b border-gray-100 pb-1 text-base;
+        @apply mb-2 border-b border-gray-100 pb-1 text-base dark:border-gray-700;
     }
 
     .backlog-markdown :where(h4) {
@@ -57,11 +57,11 @@
     }
 
     .backlog-markdown :where(p) {
-        @apply my-2 text-gray-700;
+        @apply my-2 text-gray-700 dark:text-gray-300;
     }
 
     .backlog-markdown :where(ul, ol, blockquote, pre) {
-        @apply text-gray-700;
+        @apply text-gray-700 dark:text-gray-300;
     }
 
     .backlog-markdown :where(ul, ol) {
@@ -97,15 +97,15 @@
     }
 
     .backlog-markdown :where(blockquote) {
-        @apply my-3 rounded-md border-s-4 border-gray-200 bg-gray-50 px-4 py-3 text-gray-600;
+        @apply my-3 rounded-md border-s-4 border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400;
     }
 
     .backlog-markdown :where(a) {
-        @apply break-all font-medium text-indigo-600 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-500;
+        @apply break-all font-medium text-indigo-600 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-500 dark:text-indigo-400 dark:decoration-indigo-600 dark:hover:text-indigo-300;
     }
 
     .backlog-markdown :where(code) {
-        @apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-800;
+        @apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200;
     }
 
     .backlog-markdown :where(pre) {
@@ -117,35 +117,35 @@
     }
 
     .backlog-markdown :where(hr) {
-        @apply my-4 border-gray-300;
+        @apply my-4 border-gray-300 dark:border-gray-600;
     }
 
     .backlog-markdown :where(.backlog-mention) {
-        @apply rounded bg-indigo-50 px-1 font-medium text-indigo-700;
+        @apply rounded bg-indigo-50 px-1 font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300;
     }
 
     .backlog-markdown :where(.backlog-table-wrap) {
-        @apply my-3 max-w-full overflow-x-auto rounded-md border border-gray-200;
+        @apply my-3 max-w-full overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700;
     }
 
     .backlog-markdown :where(table) {
-        @apply w-max min-w-full border-collapse text-left text-sm text-gray-700;
+        @apply w-max min-w-full border-collapse text-left text-sm text-gray-700 dark:text-gray-300;
     }
 
     .backlog-markdown :where(thead) {
-        @apply bg-gray-50;
+        @apply bg-gray-50 dark:bg-gray-700/40;
     }
 
     .backlog-markdown :where(th) {
-        @apply border border-gray-200 px-3 py-2 font-semibold text-gray-900;
+        @apply border border-gray-200 px-3 py-2 font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-100;
     }
 
     .backlog-markdown :where(td) {
-        @apply border border-gray-200 px-3 py-2 align-top;
+        @apply border border-gray-200 px-3 py-2 align-top dark:border-gray-700;
     }
 
     .backlog-markdown :where(tr:nth-child(even) td) {
-        @apply bg-gray-50/60;
+        @apply bg-gray-50/60 dark:bg-gray-700/40;
     }
 
     .backlog-markdown :where(img) {

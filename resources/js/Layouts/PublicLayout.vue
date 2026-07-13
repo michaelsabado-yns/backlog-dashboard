@@ -5,6 +5,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import BacklogApiKeyInput from '@/Components/BacklogApiKeyInput.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -13,15 +14,15 @@ const showingNavigationDropdown = ref(false);
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
-            <nav class="border-b border-gray-100 bg-white">
+        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+            <nav class="border-b border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div class="flex h-16 justify-between">
                         <div class="flex">
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('notifications.index')">
                                     <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
+                                        class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-100"
                                     />
                                 </Link>
                             </div>
@@ -50,14 +51,19 @@ const showingNavigationDropdown = ref(false);
 
                         <div class="hidden items-center gap-3 sm:ms-6 sm:flex">
                             <BacklogApiKeyInput />
+                            <ThemeToggle />
 
-                            <Dropdown align="right" width="48">
+                            <Dropdown
+                                align="right"
+                                width="48"
+                                content-classes="py-1 bg-white dark:bg-gray-800"
+                            >
                                 <template #trigger>
                                     <button
                                         type="button"
-                                        class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+                                        class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100"
                                         :class="{
-                                            'border-indigo-300 bg-indigo-50 text-indigo-700':
+                                            'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950 dark:text-indigo-300':
                                                 route().current('project-settings.*'),
                                         }"
                                         aria-label="Settings menu"
@@ -87,13 +93,14 @@ const showingNavigationDropdown = ref(false);
                             </Dropdown>
                         </div>
 
-                        <div class="-me-2 flex items-center sm:hidden">
+                        <div class="-me-2 flex items-center gap-2 sm:hidden">
+                            <ThemeToggle />
                             <button
                                 @click="
                                     showingNavigationDropdown =
                                         !showingNavigationDropdown
                                 "
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
+                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:bg-gray-700 dark:focus:text-gray-300"
                             >
                                 <svg
                                     class="h-6 w-6"
@@ -155,8 +162,8 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
                     </div>
 
-                    <div class="border-t border-gray-200 px-4 pb-2 pt-3">
-                        <p class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <div class="border-t border-gray-200 px-4 pb-2 pt-3 dark:border-gray-700">
+                        <p class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                             Settings
                         </p>
                         <ResponsiveNavLink
@@ -169,13 +176,16 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
                     </div>
 
-                    <div class="border-t border-gray-200 px-4 pb-4 pt-4">
+                    <div class="border-t border-gray-200 px-4 pb-4 pt-4 dark:border-gray-700">
                         <BacklogApiKeyInput />
                     </div>
                 </div>
             </nav>
 
-            <header class="bg-white shadow" v-if="$slots.header">
+            <header
+                class="bg-white shadow dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10"
+                v-if="$slots.header"
+            >
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>

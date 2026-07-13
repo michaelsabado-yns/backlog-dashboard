@@ -29,11 +29,18 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $theme = $request->session()->get('theme', 'light');
+
+        if (! in_array($theme, ['light', 'dark'], true)) {
+            $theme = 'light';
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
             ],
+            'theme' => $theme,
         ];
     }
 }

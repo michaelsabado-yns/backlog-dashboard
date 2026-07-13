@@ -43,7 +43,7 @@ const handleKeydown = (event) => {
       type="password"
       autocomplete="off"
       placeholder="Backlog API key"
-      class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:w-52"
+      class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400 sm:w-52"
       @keydown="handleKeydown"
     />
     <button

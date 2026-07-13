@@ -25,6 +25,6 @@ const sizeClasses = {
       role="status"
       aria-live="polite"
     />
-    <p v-if="label" class="text-sm text-gray-500">{{ label }}</p>
+    <p v-if="label" class="text-sm text-gray-500 dark:text-gray-400">{{ label }}</p>
   </div>
 </template>

@@ -86,15 +86,15 @@ const formatRelativeTime = (isoString) => {
     <template #header>
       <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-sm text-gray-500">Notification</p>
-          <h2 class="text-xl font-semibold leading-tight text-gray-800">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Notification</p>
+          <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
             {{ notification.issue_key ?? 'Notification' }}
           </h2>
         </div>
 
         <Link
           :href="route('notifications.index')"
-          class="text-sm font-medium text-gray-600 hover:text-gray-900"
+          class="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
         >
           ← Back to notifications
         </Link>
@@ -103,12 +103,12 @@ const formatRelativeTime = (isoString) => {
 
     <div class="py-5">
       <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <article class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <header class="border-b border-gray-100 px-4 py-4 sm:px-5">
+        <article class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10">
+          <header class="border-b border-gray-100 px-4 py-4 dark:border-gray-700 sm:px-5">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span class="text-sm font-semibold text-gray-800">
+                  <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
                     {{ notification.issue_key ?? 'Notification' }}
                   </span>
                   <IssueStatusBadge
@@ -116,39 +116,39 @@ const formatRelativeTime = (isoString) => {
                     :color="notification.issue_status_color"
                   />
                   <span
-                    class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-600"
+                    class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-600 dark:bg-gray-700 dark:text-gray-400"
                   >
                     {{ notification.type }}
                   </span>
                 </div>
 
-                <h3 class="mt-2 text-base font-semibold leading-snug text-gray-900">
+                <h3 class="mt-2 text-base font-semibold leading-snug text-gray-900 dark:text-gray-100">
                   {{ notification.summary }}
                 </h3>
 
-                <p class="mt-2 text-xs text-gray-500">
-                  <span class="font-medium text-gray-700">{{ notification.project }}</span>
-                  <span class="mx-1 text-gray-300">·</span>
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ notification.project }}</span>
+                  <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
                   <span>{{ notification.sender }}</span>
                   <template v-if="notification.assignee">
-                    <span class="mx-1 text-gray-300">·</span>
+                    <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
                     <span>
                       Assignee:
-                      <span class="font-medium text-gray-700">{{ notification.assignee }}</span>
+                      <span class="font-medium text-gray-700 dark:text-gray-300">{{ notification.assignee }}</span>
                     </span>
                   </template>
                 </p>
               </div>
 
               <time
-                class="shrink-0 text-right text-xs text-gray-500"
+                class="shrink-0 text-right text-xs text-gray-500 dark:text-gray-400"
                 :datetime="notification.created_at ?? undefined"
                 :title="formatDate(notification.created_at)"
               >
-                <span class="block font-medium text-gray-700">
+                <span class="block font-medium text-gray-700 dark:text-gray-300">
                   {{ formatRelativeTime(notification.created_at) }}
                 </span>
-                <span class="mt-0.5 block text-[11px] text-gray-400">
+                <span class="mt-0.5 block text-[11px] text-gray-400 dark:text-gray-500">
                   {{ formatDate(notification.created_at) }}
                 </span>
               </time>
@@ -159,7 +159,7 @@ const formatRelativeTime = (isoString) => {
               :href="notification.backlog_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="mt-3 inline-flex text-sm font-medium text-green-700 hover:underline"
+              class="mt-3 inline-flex text-sm font-medium text-green-700 hover:underline dark:text-green-300"
               @click="openInBacklog"
             >
               Open in Backlog
@@ -167,7 +167,7 @@ const formatRelativeTime = (isoString) => {
           </header>
 
           <section v-if="notification.content" class="px-4 py-4 sm:px-5">
-            <p class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
               Comment
             </p>
             <BacklogMarkdown :content="notification.content" />
@@ -175,9 +175,9 @@ const formatRelativeTime = (isoString) => {
 
           <section
             v-else
-            class="border-t border-gray-100 px-4 py-8 text-center text-sm text-gray-500 sm:px-5"
+            class="border-t border-gray-100 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400 sm:px-5"
           >
-            <p class="font-medium text-gray-700">No comment body</p>
+            <p class="font-medium text-gray-700 dark:text-gray-300">No comment body</p>
             <p class="mt-1 text-xs">
               Open the issue in Backlog for full context.
             </p>

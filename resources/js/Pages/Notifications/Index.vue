@@ -204,7 +204,7 @@ const handleMarkAllAsRead = () => {
 
   <PublicLayout>
     <template #header>
-      <h2 class="text-xl font-semibold leading-tight text-gray-800">
+      <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
         Backlog Notification Dashboard
       </h2>
     </template>
@@ -213,20 +213,20 @@ const handleMarkAllAsRead = () => {
       <div class="mx-auto max-w-4xl space-y-3 px-4 sm:px-6 lg:px-8">
         <div
           v-if="!has_api_key"
-          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm"
+          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10"
         >
-          <p class="text-lg font-medium text-gray-900">
+          <p class="text-lg font-medium text-gray-900 dark:text-gray-100">
             Enter your Backlog API key to get started
           </p>
-          <p class="mt-2 text-sm text-gray-500">
+          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
             Use the API key field in the navbar above. Your key is stored in
             this browser only and is never saved on the server.
           </p>
         </div>
 
         <template v-else>
-          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-200 px-3 py-3 sm:px-4">
+          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10">
+            <div class="border-b border-gray-200 px-3 py-3 dark:border-gray-700 sm:px-4">
               <NotificationStats
                 :total-count="notificationCounts.total"
                 :unread-count="notificationCounts.unread"
@@ -249,7 +249,7 @@ const handleMarkAllAsRead = () => {
               :type-options="typeOptions"
             />
 
-            <p class="border-b border-gray-100 px-3 py-2 text-xs text-gray-400 sm:px-4">
+            <p class="border-b border-gray-100 px-3 py-2 text-xs text-gray-400 dark:border-gray-700 dark:text-gray-500 sm:px-4">
               {{ filteredNotifications.length.toLocaleString() }} of
               {{ total_count.toLocaleString() }} shown
             </p>

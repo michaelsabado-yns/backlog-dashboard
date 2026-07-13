@@ -113,18 +113,18 @@ const openInBacklog = (notification) => {
   <div>
     <div
       v-if="notifications.length === 0"
-      class="px-4 py-12 text-center text-sm text-gray-500"
+      class="px-4 py-12 text-center text-sm text-gray-500 dark:text-gray-400"
     >
-      <p class="font-medium text-gray-900">No notifications found</p>
+      <p class="font-medium text-gray-900 dark:text-gray-100">No notifications found</p>
       <p class="mt-1">Try different filters or refetch from Backlog.</p>
     </div>
 
-    <ul v-else class="divide-y divide-gray-100">
+    <ul v-else class="divide-y divide-gray-100 dark:divide-gray-700">
       <li
         v-for="notification in notifications"
         :key="notification.id"
         class="px-3 py-3 sm:px-4"
-        :class="notification.isRead ? 'bg-white' : 'bg-green-50/60'"
+        :class="notification.isRead ? 'bg-white dark:bg-gray-800' : 'bg-green-50/60 dark:bg-green-950/40'"
       >
         <article class="min-w-0">
           <div class="flex items-start justify-between gap-3">
@@ -139,7 +139,7 @@ const openInBacklog = (notification) => {
                   :href="route('notifications.show', notification.id)"
                   class="text-sm font-semibold hover:underline"
                   :class="
-                    notification.isRead ? 'text-gray-800' : 'text-green-700'
+                    notification.isRead ? 'text-gray-800 dark:text-gray-200' : 'text-green-700 dark:text-green-300'
                   "
                 >
                   {{ notification.issue_key ?? 'Notification' }}
@@ -151,7 +151,7 @@ const openInBacklog = (notification) => {
               </div>
 
               <p
-                class="mt-1 line-clamp-2 text-sm leading-snug text-gray-900"
+                class="mt-1 line-clamp-2 text-sm leading-snug text-gray-900 dark:text-gray-100"
                 :class="notification.isRead ? 'font-normal' : 'font-medium'"
               >
                 {{ notification.summary }}
@@ -159,7 +159,7 @@ const openInBacklog = (notification) => {
             </div>
 
             <time
-              class="shrink-0 whitespace-nowrap text-xs text-gray-500"
+              class="shrink-0 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400"
               :datetime="notification.created_at ?? undefined"
               :title="formatDate(notification.created_at)"
             >
@@ -167,23 +167,23 @@ const openInBacklog = (notification) => {
             </time>
           </div>
 
-          <p class="mt-1.5 text-xs text-gray-500">
+          <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
             <span>{{ notification.project }}</span>
-            <span class="mx-1 text-gray-300">·</span>
+            <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
             <span>{{ notification.type }}</span>
-            <span class="mx-1 text-gray-300">·</span>
+            <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
             <span>{{ notification.sender }}</span>
             <template v-if="notification.assignee">
-              <span class="mx-1 text-gray-300">·</span>
+              <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
               <span>
                 Assignee:
-                <span class="font-medium text-gray-700">{{ notification.assignee }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">{{ notification.assignee }}</span>
               </span>
             </template>
           </p>
 
           <div v-if="hasCommentContent(notification.content)" class="mt-2">
-            <div class="rounded-md border border-gray-100 bg-gray-50 px-2.5 py-2">
+            <div class="rounded-md border border-gray-100 bg-gray-50 px-2.5 py-2 dark:border-gray-700 dark:bg-gray-900/50">
               <BacklogMarkdown
                 :content="notification.content"
                 :compact="!showFullComment(notification)"
@@ -193,7 +193,7 @@ const openInBacklog = (notification) => {
             <button
               v-if="commentNeedsExpand(notification.content)"
               type="button"
-              class="mt-1 text-[11px] font-medium text-gray-500 hover:text-gray-800"
+              class="mt-1 text-[11px] font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
               @click="toggleComment(notification.id)"
             >
               {{
@@ -207,7 +207,7 @@ const openInBacklog = (notification) => {
           <div class="mt-2 flex flex-wrap gap-x-4 text-xs">
             <Link
               :href="route('notifications.show', notification.id)"
-              class="font-medium text-green-700 hover:underline"
+              class="font-medium text-green-700 hover:underline dark:text-green-300"
             >
               View
             </Link>
@@ -216,7 +216,7 @@ const openInBacklog = (notification) => {
               :href="notification.backlog_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="font-medium text-gray-600 hover:text-gray-900"
+              class="font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
               @click="openInBacklog(notification)"
             >
               Open in Backlog

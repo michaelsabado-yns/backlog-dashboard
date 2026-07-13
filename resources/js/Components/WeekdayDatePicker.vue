@@ -132,7 +132,7 @@ const selectDay = (day) => {
     <div class="flex items-center gap-1.5">
       <button
         type="button"
-        class="shrink-0 rounded-md border border-gray-200 px-2 py-2 text-sm text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        class="shrink-0 rounded-md border border-gray-200 px-2 py-2 text-sm text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
         :disabled="disabled || !canGoToPreviousWeek"
         aria-label="Previous week"
         @click="shiftWeek(-1)"
@@ -150,10 +150,10 @@ const selectDay = (day) => {
             day.selected
               ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
               : day.selectable
-                ? 'border-gray-200 bg-white text-gray-900 hover:border-gray-300 hover:bg-gray-50'
-                : 'cursor-not-allowed border-transparent bg-gray-50 text-gray-300',
-            day.beforeHistory ? 'line-through decoration-gray-300' : '',
-            day.today && !day.selected ? 'ring-2 ring-indigo-300 ring-offset-1' : '',
+                ? 'border-gray-200 bg-white text-gray-900 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-600 dark:hover:bg-gray-700'
+                : 'cursor-not-allowed border-transparent bg-gray-50 text-gray-300 dark:bg-gray-900/50 dark:text-gray-600',
+            day.beforeHistory ? 'line-through decoration-gray-300 dark:decoration-gray-600' : '',
+            day.today && !day.selected ? 'ring-2 ring-indigo-300 ring-offset-1 dark:ring-indigo-500 dark:ring-offset-gray-900' : '',
           ]"
           :disabled="!day.selectable"
           :title="
@@ -167,7 +167,7 @@ const selectDay = (day) => {
         >
           <span
             class="block text-[10px] font-medium uppercase leading-none"
-            :class="day.selected ? 'text-indigo-100' : 'text-gray-400'"
+            :class="day.selected ? 'text-indigo-100' : 'text-gray-400 dark:text-gray-500'"
           >
             {{ day.label }}
           </span>
@@ -177,7 +177,7 @@ const selectDay = (day) => {
 
       <button
         type="button"
-        class="shrink-0 rounded-md border border-gray-200 px-2 py-2 text-sm text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        class="shrink-0 rounded-md border border-gray-200 px-2 py-2 text-sm text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
         :disabled="disabled || !canGoToNextWeek"
         aria-label="Next week"
         @click="shiftWeek(1)"
@@ -186,7 +186,7 @@ const selectDay = (day) => {
       </button>
     </div>
 
-    <p class="mt-1 text-center text-[11px] text-gray-400">
+    <p class="mt-1 text-center text-[11px] text-gray-400 dark:text-gray-500">
       {{ weekLabel }}
     </p>
   </div>

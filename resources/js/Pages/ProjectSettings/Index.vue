@@ -153,12 +153,12 @@ onMounted(async () => {
     <template #header>
       <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-sm text-gray-500">Settings</p>
-          <h2 class="text-xl font-semibold leading-tight text-gray-800">Projects</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Settings</p>
+          <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Projects</h2>
         </div>
         <Link
           :href="route('notifications.index')"
-          class="text-sm font-medium text-gray-600 hover:text-gray-900"
+          class="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
         >
           ← Back to app
         </Link>
@@ -169,21 +169,21 @@ onMounted(async () => {
       <div class="mx-auto max-w-4xl space-y-3 px-4 sm:px-6 lg:px-8">
         <div
           v-if="!has_api_key"
-          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm"
+          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10"
         >
-          <p class="text-lg font-medium text-gray-900">
+          <p class="text-lg font-medium text-gray-900 dark:text-gray-100">
             Enter your Backlog API key to get started
           </p>
         </div>
 
         <template v-else>
-          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div class="space-y-2 border-b border-gray-200 px-3 py-3 sm:px-4">
+          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10">
+            <div class="space-y-2 border-b border-gray-200 px-3 py-3 dark:border-gray-700 sm:px-4">
               <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div class="text-sm text-gray-600">
-                  <span class="font-semibold text-gray-900">{{ selectedCount.toLocaleString() }}</span>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                  <span class="font-semibold text-gray-900 dark:text-gray-100">{{ selectedCount.toLocaleString() }}</span>
                   of
-                  <span class="font-semibold text-gray-900">{{ activeProjects.length.toLocaleString() }}</span>
+                  <span class="font-semibold text-gray-900 dark:text-gray-100">{{ activeProjects.length.toLocaleString() }}</span>
                   active projects selected
                 </div>
 
@@ -214,18 +214,18 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <p class="text-xs text-gray-400">
+              <p class="text-xs text-gray-400 dark:text-gray-500">
                 <span v-if="currentUser">Logged in as {{ currentUser.name }}</span>
                 <span v-if="currentUser && fetchedAt"> · </span>
                 <span v-if="fetchedAt">Fetched {{ formatFetchedAt(fetchedAt) }}</span>
               </p>
 
-              <p class="text-xs text-gray-500">
+              <p class="text-xs text-gray-500 dark:text-gray-400">
                 Enabled projects are sent with every Backlog API request from this browser.
               </p>
             </div>
 
-            <div class="border-b border-gray-100 bg-gray-50 px-3 py-2 sm:px-4">
+            <div class="border-b border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/50 sm:px-4">
               <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <TextInput
                   v-model="search"
@@ -233,11 +233,11 @@ onMounted(async () => {
                   class="block w-full py-1.5 text-sm shadow-sm"
                   placeholder="Search projects…"
                 />
-                <label class="flex shrink-0 items-center gap-2 text-xs text-gray-600">
+                <label class="flex shrink-0 items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                   <input
                     v-model="showArchived"
                     type="checkbox"
-                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600"
                   />
                   Show archived
                 </label>
@@ -246,29 +246,29 @@ onMounted(async () => {
 
             <div
               v-if="loadError"
-              class="border-b border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 sm:px-4"
+              class="border-b border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300 sm:px-4"
             >
               {{ loadError }}
             </div>
 
             <div
               v-if="loading"
-              class="px-4 py-12 text-center text-sm text-gray-500"
+              class="px-4 py-12 text-center text-sm text-gray-500 dark:text-gray-400"
             >
               Loading projects…
             </div>
 
-            <ul v-else-if="visibleProjects.length === 0" class="px-4 py-12 text-center text-sm text-gray-500">
-              <p class="font-medium text-gray-900">No projects match your filters</p>
+            <ul v-else-if="visibleProjects.length === 0" class="px-4 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+              <p class="font-medium text-gray-900 dark:text-gray-100">No projects match your filters</p>
             </ul>
 
-            <ul v-else class="divide-y divide-gray-100">
+            <ul v-else class="divide-y divide-gray-100 dark:divide-gray-700">
               <li
                 v-for="project in visibleProjects"
                 :key="project.id"
                 class="px-3 py-3 sm:px-4"
                 :class="[
-                  isProjectSelected(project.id) ? 'bg-indigo-50/40' : 'bg-white',
+                  isProjectSelected(project.id) ? 'bg-indigo-50/40 dark:bg-indigo-950/40' : 'bg-white dark:bg-gray-800',
                   project.archived ? 'opacity-60' : '',
                 ]"
               >
@@ -276,7 +276,7 @@ onMounted(async () => {
                   <input
                     :id="`project-${project.id}`"
                     type="checkbox"
-                    class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600"
                     :checked="isProjectSelected(project.id)"
                     :disabled="project.archived"
                     @change="toggleProject(project.id)"
@@ -285,17 +285,17 @@ onMounted(async () => {
                   <div class="min-w-0 flex-1">
                     <label :for="`project-${project.id}`" class="block cursor-pointer">
                       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span class="font-semibold text-gray-900">{{ project.name }}</span>
-                        <span class="text-xs font-medium text-indigo-600">{{ project.project_key }}</span>
+                        <span class="font-semibold text-gray-900 dark:text-gray-100">{{ project.name }}</span>
+                        <span class="text-xs font-medium text-indigo-600 dark:text-indigo-400">{{ project.project_key }}</span>
                         <span
                           v-if="project.archived"
-                          class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-gray-500"
+                          class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-gray-500 dark:bg-gray-700 dark:text-gray-400"
                         >
                           Archived
                         </span>
                       </div>
 
-                      <p class="mt-0.5 text-xs text-gray-500">
+                      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                         {{ project.member_count.toLocaleString() }} members
                         · {{ roleSummary(project) }}
                       </p>
@@ -304,7 +304,7 @@ onMounted(async () => {
                     <button
                       v-if="project.custom_fields?.length || project.members?.length"
                       type="button"
-                      class="mt-1 text-[11px] font-medium text-gray-500 hover:text-gray-800"
+                      class="mt-1 text-[11px] font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                       @click="toggleExpanded(project.id)"
                     >
                       {{ expandedProjectId === project.id ? 'Hide details' : 'Details' }}
@@ -312,10 +312,10 @@ onMounted(async () => {
 
                     <div
                       v-if="expandedProjectId === project.id"
-                      class="mt-2 space-y-3 rounded-md border border-gray-100 bg-gray-50 p-3 text-xs text-gray-600"
+                      class="mt-2 space-y-3 rounded-md border border-gray-100 bg-gray-50 p-3 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400"
                     >
                       <div v-if="project.sub_person_in_charge_fields?.length">
-                        <p class="font-medium text-gray-700">Sub PIC fields</p>
+                        <p class="font-medium text-gray-700 dark:text-gray-300">Sub PIC fields</p>
                         <p class="mt-0.5">
                           {{
                             project.sub_person_in_charge_fields
@@ -326,7 +326,7 @@ onMounted(async () => {
                       </div>
 
                       <div v-if="project.sub_qa_in_charge_fields?.length">
-                        <p class="font-medium text-gray-700">Sub QA fields</p>
+                        <p class="font-medium text-gray-700 dark:text-gray-300">Sub QA fields</p>
                         <p class="mt-0.5">
                           {{
                             project.sub_qa_in_charge_fields
@@ -338,7 +338,7 @@ onMounted(async () => {
 
                       <div v-if="project.members?.length" class="grid gap-3 sm:grid-cols-2">
                         <div>
-                          <p class="font-medium text-gray-700">Members</p>
+                          <p class="font-medium text-gray-700 dark:text-gray-300">Members</p>
                           <ul class="mt-1 max-h-32 space-y-0.5 overflow-y-auto">
                             <li v-for="member in project.members" :key="member.id">
                               {{ member.name }}
@@ -347,18 +347,18 @@ onMounted(async () => {
                         </div>
 
                         <div v-if="project.custom_fields?.length">
-                          <p class="font-medium text-gray-700">Custom fields</p>
+                          <p class="font-medium text-gray-700 dark:text-gray-300">Custom fields</p>
                           <ul class="mt-1 max-h-32 space-y-1 overflow-y-auto">
                             <li
                               v-for="field in project.custom_fields"
                               :key="field.id"
-                              class="rounded border border-gray-200 bg-white px-2 py-1"
+                              class="rounded border border-gray-200 bg-white px-2 py-1 dark:border-gray-700 dark:bg-gray-800"
                             >
-                              <span class="font-medium text-gray-800">{{ field.name }}</span>
-                              <span class="text-gray-400"> · {{ field.id }}</span>
+                              <span class="font-medium text-gray-800 dark:text-gray-200">{{ field.name }}</span>
+                              <span class="text-gray-400 dark:text-gray-500"> · {{ field.id }}</span>
                               <span
                                 v-if="field.role"
-                                class="ml-1 text-green-700"
+                                class="ml-1 text-green-700 dark:text-green-300"
                               >
                                 ({{ fieldRoleLabel(field.role) }})
                               </span>
@@ -374,7 +374,7 @@ onMounted(async () => {
 
             <p
               v-if="!loading && archivedProjects.length > 0 && !showArchived"
-              class="border-t border-gray-100 px-3 py-2 text-[11px] text-gray-400 sm:px-4"
+              class="border-t border-gray-100 px-3 py-2 text-[11px] text-gray-400 dark:border-gray-700 dark:text-gray-500 sm:px-4"
             >
               {{ archivedProjects.length.toLocaleString() }} archived project(s) hidden.
               Enable “Show archived” to view them.

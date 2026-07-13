@@ -47,11 +47,11 @@ defineEmits([
 ]);
 
 const selectClass =
-  'block w-full rounded-md border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+  'block w-full rounded-md border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100';
 </script>
 
 <template>
-  <div class="border-t border-gray-200 bg-gray-50 px-3 py-3 sm:px-4">
+  <div class="border-t border-gray-200 bg-gray-50 px-3 py-3 dark:border-gray-700 dark:bg-gray-900/50 sm:px-4">
     <div class="grid grid-cols-2 gap-3">
       <div class="col-span-2">
         <label for="notification-search" class="sr-only">Search</label>
@@ -68,7 +68,7 @@ const selectClass =
       <div>
         <label
           for="notification-read-status"
-          class="mb-1 block text-xs font-medium text-gray-600"
+          class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
         >
           Status
         </label>
@@ -87,7 +87,7 @@ const selectClass =
       <div>
         <label
           for="notification-type"
-          class="mb-1 block text-xs font-medium text-gray-600"
+          class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
         >
           Type
         </label>
@@ -107,7 +107,7 @@ const selectClass =
       <div class="col-span-2">
         <label
           for="notification-project"
-          class="mb-1 block text-xs font-medium text-gray-600"
+          class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
         >
           Project
         </label>

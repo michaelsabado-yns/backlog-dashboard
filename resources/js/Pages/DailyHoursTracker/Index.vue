@@ -506,8 +506,8 @@ watch(selectedDate, (date, previousDate) => {
   <PublicLayout>
     <template #header>
       <div>
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">Daily Hours Tracker</h2>
-        <p v-if="currentUser" class="mt-0.5 text-sm text-gray-500">
+        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Daily Hours Tracker</h2>
+        <p v-if="currentUser" class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
           Viewing {{ trackedUserLabel }}
         </p>
       </div>
@@ -517,20 +517,20 @@ watch(selectedDate, (date, previousDate) => {
       <div class="mx-auto max-w-4xl space-y-3 px-4 sm:px-6 lg:px-8">
         <div
           v-if="!has_api_key"
-          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm"
+          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10"
         >
-          <p class="text-lg font-medium text-gray-900">
+          <p class="text-lg font-medium text-gray-900 dark:text-gray-100">
             Enter your Backlog API key to get started
           </p>
         </div>
 
         <template v-else>
-          <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-            <div class="mb-3 space-y-2 border-b border-gray-100 pb-3">
-              <label class="block text-xs font-medium text-gray-600">Tracked user</label>
+          <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10">
+            <div class="mb-3 space-y-2 border-b border-gray-100 pb-3 dark:border-gray-700">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Tracked user</label>
               <select
                 v-model="selectedTrackedUserId"
-                class="block w-full rounded-md border-gray-300 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:max-w-xs"
+                class="block w-full rounded-md border-gray-300 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:max-w-xs"
                 :disabled="isBusy || usersLoading"
               >
                 <option :value="null">
@@ -544,7 +544,7 @@ watch(selectedDate, (date, previousDate) => {
                   {{ user.name }}{{ user.user_id ? ` (${user.user_id})` : '' }}
                 </option>
               </select>
-              <p class="text-[11px] text-gray-400">
+              <p class="text-[11px] text-gray-400 dark:text-gray-500">
                 <span v-if="usersLoading">Loading users from enabled projects…</span>
                 <span v-else>
                   {{ browsableUsers.length.toLocaleString() }} project member(s) available
@@ -560,10 +560,10 @@ watch(selectedDate, (date, previousDate) => {
                   :max-date="maxSelectableDate"
                   :disabled="isBusy || boundsLoading"
                 />
-                <p v-if="historyRangeLabel" class="text-[11px] text-gray-400">
+                <p v-if="historyRangeLabel" class="text-[11px] text-gray-400 dark:text-gray-500">
                   {{ historyRangeLabel }}
                 </p>
-                <p v-else-if="boundsLoading" class="text-[11px] text-gray-400">
+                <p v-else-if="boundsLoading" class="text-[11px] text-gray-400 dark:text-gray-500">
                   Loading activity range…
                 </p>
               </div>
@@ -580,7 +580,7 @@ watch(selectedDate, (date, previousDate) => {
               </PrimaryButton>
             </div>
 
-            <p class="mt-2 text-[11px] text-gray-400">
+            <p class="mt-2 text-[11px] text-gray-400 dark:text-gray-500">
               <span v-if="!isConfigured">All joined projects</span>
               <span v-else-if="activeProjectIds.length === 0">No projects selected</span>
               <span v-else>
@@ -598,7 +598,7 @@ watch(selectedDate, (date, previousDate) => {
 
           <div
             v-if="isConfigured && activeProjectIds.length === 0"
-            class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+            class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
           >
             No projects are enabled. Select projects in
             <a :href="route('project-settings.index')" class="font-medium underline">Project settings</a>.
@@ -606,29 +606,29 @@ watch(selectedDate, (date, previousDate) => {
 
           <div
             v-if="loadError"
-            class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300"
           >
             {{ loadError }}
           </div>
 
-          <div v-if="isBusy && hasProjectSelection" class="rounded-lg border border-gray-200 bg-white px-4 py-12 shadow-sm">
+          <div v-if="isBusy && hasProjectSelection" class="rounded-lg border border-gray-200 bg-white px-4 py-12 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10">
             <LoadingSpinner
               :label="refreshing ? 'Refetching from Backlog…' : 'Loading daily hours…'"
             />
           </div>
 
           <template v-else-if="hasProjectSelection">
-            <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10">
               <div
-                class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 px-3 py-3 sm:px-4"
+                class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 px-3 py-3 dark:border-gray-700 sm:px-4"
               >
-                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-gray-600">
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
                   <span>
-                    <span class="text-lg font-bold text-green-700">{{ formatHours(totalHours) }}</span>
+                    <span class="text-lg font-bold text-green-700 dark:text-green-300">{{ formatHours(totalHours) }}</span>
                     total
                   </span>
                   <span>
-                    <span class="font-semibold text-gray-900">{{ ticketCount.toLocaleString() }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-gray-100">{{ ticketCount.toLocaleString() }}</span>
                     {{ ticketCount === 1 ? 'ticket' : 'tickets' }}
                   </span>
                 </div>
@@ -649,28 +649,28 @@ watch(selectedDate, (date, previousDate) => {
                   >
                     {{ reportCopied ? 'Copied!' : 'Copy report' }}
                   </SecondaryButton>
-                  <span class="text-xs text-gray-400">{{ formatDisplayDate(selectedDate) }}</span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500">{{ formatDisplayDate(selectedDate) }}</span>
                 </div>
               </div>
 
               <div
                 v-if="showProgressReport && progressReportText"
-                class="border-b border-gray-200 bg-gray-50 px-3 py-3 sm:px-4"
+                class="border-b border-gray-200 bg-gray-50 px-3 py-3 dark:border-gray-700 dark:bg-gray-900/50 sm:px-4"
               >
-                <p class="mb-2 text-xs font-medium text-gray-600">Ready to paste</p>
+                <p class="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">Ready to paste</p>
                 <pre
-                  class="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border border-gray-200 bg-white p-3 font-mono text-xs leading-relaxed text-gray-800"
+                  class="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border border-gray-200 bg-white p-3 font-mono text-xs leading-relaxed text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                 >{{ progressReportText }}</pre>
               </div>
 
               <div
                 v-if="displayTickets.length === 0"
-                class="px-4 py-12 text-center text-sm text-gray-500"
+                class="px-4 py-12 text-center text-sm text-gray-500 dark:text-gray-400"
               >
-                <p class="font-medium text-gray-900">No hour changes for this date.</p>
+                <p class="font-medium text-gray-900 dark:text-gray-100">No hour changes for this date.</p>
                 <p
                   v-if="beforeHistory || emptyReason === 'before_history' || !dateReachable"
-                  class="mt-2 text-amber-700"
+                  class="mt-2 text-amber-700 dark:text-amber-300"
                 >
                   This date is before the selectable range. The earliest day in your latest 100
                   activities is
@@ -689,7 +689,7 @@ watch(selectedDate, (date, previousDate) => {
                 </p>
               </div>
 
-              <ul v-else class="divide-y divide-gray-100">
+              <ul v-else class="divide-y divide-gray-100 dark:divide-gray-700">
                 <li
                   v-for="ticket in displayTickets"
                   :key="ticket.issue_key"
@@ -704,33 +704,33 @@ watch(selectedDate, (date, previousDate) => {
                             :href="ticket.backlog_url"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="text-sm font-semibold text-indigo-600 hover:underline"
+                            class="text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
                           >
                             {{ ticket.issue_key }}
                           </a>
-                          <span v-else class="text-sm font-semibold text-gray-800">
+                          <span v-else class="text-sm font-semibold text-gray-800 dark:text-gray-200">
                             {{ ticket.issue_key }}
                           </span>
                         </div>
 
-                        <p class="mt-0.5 line-clamp-2 text-sm leading-snug text-gray-900">
+                        <p class="mt-0.5 line-clamp-2 text-sm leading-snug text-gray-900 dark:text-gray-100">
                           {{ ticket.summary }}
                         </p>
                       </div>
 
                       <div class="shrink-0 text-right">
-                        <p class="text-lg font-bold leading-none text-green-700">
+                        <p class="text-lg font-bold leading-none text-green-700 dark:text-green-300">
                           +{{ formatHours(ticket.worked_hours) }}
                         </p>
-                        <p class="mt-0.5 text-[11px] text-gray-400">worked</p>
+                        <p class="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">worked</p>
                       </div>
                     </div>
 
-                    <p class="mt-1.5 text-xs text-gray-500">
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                       {{ formatHours(ticket.previous_hours) }}
-                      <span class="text-gray-300">→</span>
+                      <span class="text-gray-300 dark:text-gray-600">→</span>
                       {{ formatHours(ticket.current_hours) }}
-                      <span class="mx-1 text-gray-300">·</span>
+                      <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
                       updated {{ formatDateTime(ticket.updated_at) }}
                     </p>
 
@@ -742,11 +742,11 @@ watch(selectedDate, (date, previousDate) => {
                         <li
                           v-for="(change, index) in ticket.hour_changes"
                           :key="`${ticket.issue_key}-change-${index}`"
-                          class="rounded border border-gray-100 bg-gray-50 px-2 py-1.5 text-xs text-gray-600"
+                          class="rounded border border-gray-100 bg-gray-50 px-2 py-1.5 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400"
                         >
-                          <span class="font-medium text-gray-700">{{ formatFieldLabel(change) }}:</span>
+                          <span class="font-medium text-gray-700 dark:text-gray-300">{{ formatFieldLabel(change) }}:</span>
                           {{ formatHours(change.before) }} → {{ formatHours(change.after) }}
-                          <span class="text-gray-400">
+                          <span class="text-gray-400 dark:text-gray-500">
                             · {{ change.changed_by }}
                             <span v-if="change.changed_at">· {{ formatDateTime(change.changed_at) }}</span>
                           </span>
@@ -756,7 +756,7 @@ watch(selectedDate, (date, previousDate) => {
                       <button
                         v-else
                         type="button"
-                        class="mt-1.5 text-[11px] font-medium text-gray-500 hover:text-gray-800"
+                        class="mt-1.5 text-[11px] font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                         @click="toggleTicketExpanded(ticket.issue_key)"
                       >
                         {{ ticket.hour_changes.length }} hour updates · Show
@@ -765,7 +765,7 @@ watch(selectedDate, (date, previousDate) => {
                       <button
                         v-if="ticket.hour_changes.length > 1 && expandedTicketKey === ticket.issue_key"
                         type="button"
-                        class="mt-1 text-[11px] font-medium text-gray-500 hover:text-gray-800"
+                        class="mt-1 text-[11px] font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                         @click="toggleTicketExpanded(ticket.issue_key)"
                       >
                         Hide updates
@@ -777,7 +777,7 @@ watch(selectedDate, (date, previousDate) => {
                       :href="ticket.backlog_url"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="mt-2 inline-block text-xs font-medium text-indigo-600 hover:underline"
+                      class="mt-2 inline-block text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
                     >
                       Open in Backlog
                     </a>
