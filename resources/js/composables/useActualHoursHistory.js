@@ -96,7 +96,7 @@ const normalizeIssueSnapshots = (issueKey) => {
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 };
 
-const formatHours = (value) => `${toNumber(value).toFixed(1)}h`;
+const formatHours = (value) => `${toNumber(value).toFixed(2)}h`;
 
 const computeDailySummary = (issueKey, date) => {
   const targetDate = toLocalDateString(date);

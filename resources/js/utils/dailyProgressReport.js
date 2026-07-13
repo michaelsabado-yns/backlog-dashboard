@@ -9,7 +9,7 @@ const formatReportHours = (hours) => {
     return `${value}h`;
   }
 
-  return `${value.toFixed(1)}h`;
+  return `${value.toFixed(2)}h`;
 };
 
 const resolveProjectName = (ticket) => {

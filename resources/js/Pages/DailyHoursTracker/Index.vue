@@ -2,7 +2,6 @@
 import LoadingSpinner from '@/Components/LoadingSpinner.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import WeekdayDatePicker from '@/Components/WeekdayDatePicker.vue';
 import { useActualHoursHistory } from '@/composables/useActualHoursHistory';
 import {
@@ -68,7 +67,6 @@ const reportCopied = ref(false);
 const currentUser = ref(null);
 const browsableUsers = ref([]);
 const selectedTrackedUserId = ref(null);
-const userSearch = ref('');
 const usersLoading = ref(false);
 
 const activeProjectIds = computed(() => getSelectedProjectIds());
@@ -90,29 +88,9 @@ const trackedUserLabel = computed(() => {
 
   return 'Selected user';
 });
-const filteredBrowsableUsers = computed(() => {
-  const query = userSearch.value.trim().toLowerCase();
-
-  return browsableUsers.value.filter((user) => {
-    if (currentUser.value?.id && user.id === currentUser.value.id) {
-      return false;
-    }
-
-    if (selectedTrackedUserId.value && user.id === selectedTrackedUserId.value) {
-      return true;
-    }
-
-    if (!query) {
-      return true;
-    }
-
-    return [user.name, user.user_id].some((value) =>
-      String(value ?? '')
-        .toLowerCase()
-        .includes(query),
-    );
-  });
-});
+const otherBrowsableUsers = computed(() =>
+  browsableUsers.value.filter((user) => !currentUser.value?.id || user.id !== currentUser.value.id),
+);
 const hasProjectSelection = computed(() => !isConfigured.value || activeProjectIds.value.length > 0);
 const scopedProjectCount = computed(() => scopedProjectIds.value.length);
 const browserTimezone = getBrowserTimezone();
@@ -182,7 +160,7 @@ const formatDisplayDate = (value) => {
   }).format(date);
 };
 
-const formatHours = (hours) => `${Number(hours ?? 0).toFixed(1)}h`;
+const formatHours = (hours) => `${Number(hours ?? 0).toFixed(2)}h`;
 
 const formatFieldLabel = (change) => {
   if (change.field_kind === 'sub_actual_hours') {
@@ -480,7 +458,6 @@ watch(selectedTrackedUserId, async (nextUserId, previousUserId) => {
     return;
   }
 
-  userSearch.value = '';
   applyCachedDay(selectedDate.value);
   await loadDateBounds();
   await refreshBacklogData({ force: true });
@@ -551,32 +528,22 @@ watch(selectedDate, (date, previousDate) => {
           <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
             <div class="mb-3 space-y-2 border-b border-gray-100 pb-3">
               <label class="block text-xs font-medium text-gray-600">Tracked user</label>
-              <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <select
-                  v-model="selectedTrackedUserId"
-                  class="block w-full rounded-md border-gray-300 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:max-w-xs"
-                  :disabled="isBusy || usersLoading"
+              <select
+                v-model="selectedTrackedUserId"
+                class="block w-full rounded-md border-gray-300 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:max-w-xs"
+                :disabled="isBusy || usersLoading"
+              >
+                <option :value="null">
+                  Me{{ currentUser?.name ? ` (${currentUser.name})` : '' }}
+                </option>
+                <option
+                  v-for="user in otherBrowsableUsers"
+                  :key="user.id"
+                  :value="user.id"
                 >
-                  <option :value="null">
-                    Me{{ currentUser?.name ? ` (${currentUser.name})` : '' }}
-                  </option>
-                  <option
-                    v-for="user in filteredBrowsableUsers"
-                    :key="user.id"
-                    :value="user.id"
-                  >
-                    {{ user.name }}{{ user.user_id ? ` (${user.user_id})` : '' }}
-                  </option>
-                </select>
-
-                <TextInput
-                  v-model="userSearch"
-                  type="search"
-                  class="block w-full py-2 text-sm shadow-sm sm:max-w-xs"
-                  placeholder="Search users…"
-                  :disabled="usersLoading"
-                />
-              </div>
+                  {{ user.name }}{{ user.user_id ? ` (${user.user_id})` : '' }}
+                </option>
+              </select>
               <p class="text-[11px] text-gray-400">
                 <span v-if="usersLoading">Loading users from enabled projects…</span>
                 <span v-else>
