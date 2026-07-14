@@ -6,6 +6,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
+import AppFooter from '@/Components/AppFooter.vue';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
@@ -13,7 +14,7 @@ const showingNavigationDropdown = ref(false);
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div class="flex min-h-screen flex-col bg-gray-100 dark:bg-gray-900">
             <nav
                 class="border-b border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800"
             >
@@ -25,7 +26,7 @@ const showingNavigationDropdown = ref(false);
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')">
                                     <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-100"
+                                        class="block h-9 w-auto text-gray-800 dark:text-gray-100"
                                     />
                                 </Link>
                             </div>
@@ -210,9 +211,11 @@ const showingNavigationDropdown = ref(false);
             </header>
 
             <!-- Page Content -->
-            <main>
+            <main class="flex-1">
                 <slot />
             </main>
+
+            <AppFooter />
         </div>
     </div>
 </template>

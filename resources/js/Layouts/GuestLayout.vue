@@ -1,5 +1,6 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import AppFooter from '@/Components/AppFooter.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Link } from '@inertiajs/vue3';
 </script>
@@ -14,7 +15,7 @@ import { Link } from '@inertiajs/vue3';
 
         <div>
             <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500 dark:text-gray-400" />
+                <ApplicationLogo class="h-20 w-20 text-gray-500 dark:text-gray-400" />
             </Link>
         </div>
 
@@ -22,6 +23,10 @@ import { Link } from '@inertiajs/vue3';
             class="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10 sm:max-w-md sm:rounded-lg"
         >
             <slot />
+        </div>
+
+        <div class="mt-auto w-full pt-8">
+            <AppFooter />
         </div>
     </div>
 </template>
