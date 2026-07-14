@@ -2,6 +2,7 @@
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import BacklogApiKeyInput from '@/Components/BacklogApiKeyInput.vue';
 import { useBacklogProjectSettings } from '@/composables/useBacklogProjectSettings';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
@@ -168,11 +169,26 @@ onMounted(async () => {
     <div class="py-5">
       <div class="mx-auto max-w-4xl space-y-3 px-4 sm:px-6 lg:px-8">
         <div
+          class="rounded-lg border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10 sm:px-5"
+        >
+          <p class="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Backlog API key
+          </p>
+          <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+            Stored in this browser and sent with Backlog API requests.
+          </p>
+          <BacklogApiKeyInput
+            stacked
+            input-id="backlog-api-key-settings"
+          />
+        </div>
+
+        <div
           v-if="!has_api_key"
-          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10"
+          class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:shadow-none dark:ring-1 dark:ring-white/10"
         >
           <p class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            Enter your Backlog API key to get started
+            Enter your Backlog API key above to load projects
           </p>
         </div>
 

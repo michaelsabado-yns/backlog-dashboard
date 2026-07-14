@@ -125,6 +125,55 @@ class BacklogIssueService
     }
 
     /**
+     * Fetch current status (name + color) for the given issue keys.
+     *
+     * @param  array<int, string>  $issueKeys
+     * @return array<string, array{issue_status: string|null, issue_status_color: string|null}>
+     */
+    public function getStatusesByIssueKeys(string $apiKey, array $issueKeys): array
+    {
+        $trimmedApiKey = trim($apiKey);
+
+        if ($trimmedApiKey === '') {
+            return [];
+        }
+
+        $uniqueKeys = array_values(array_unique(array_filter(
+            $issueKeys,
+            static fn (mixed $key): bool => is_string($key) && $key !== '',
+        )));
+
+        if ($uniqueKeys === []) {
+            return [];
+        }
+
+        $statuses = [];
+
+        foreach (array_chunk($uniqueKeys, 100) as $chunk) {
+            $issues = $this->fetchAllIssues($trimmedApiKey, [
+                'issueKey' => $chunk,
+            ]);
+
+            foreach ($issues as $issue) {
+                $issueKey = $issue['issueKey'] ?? null;
+
+                if (! is_string($issueKey) || $issueKey === '') {
+                    continue;
+                }
+
+                $status = is_array($issue['status'] ?? null) ? $issue['status'] : [];
+
+                $statuses[$issueKey] = [
+                    'issue_status' => is_string($status['name'] ?? null) ? $status['name'] : null,
+                    'issue_status_color' => is_string($status['color'] ?? null) ? $status['color'] : null,
+                ];
+            }
+        }
+
+        return $statuses;
+    }
+
+    /**
      * @param  array<string, mixed>  $baseFilters
      * @param  array<string, mixed>  $field
      * @param  array<string, mixed>  $user

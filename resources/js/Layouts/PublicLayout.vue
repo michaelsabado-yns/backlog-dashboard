@@ -51,12 +51,11 @@ const showingNavigationDropdown = ref(false);
                         </div>
 
                         <div class="hidden items-center gap-3 sm:ms-6 sm:flex">
-                            <BacklogApiKeyInput />
                             <ThemeToggle />
 
                             <Dropdown
                                 align="right"
-                                width="48"
+                                width="80"
                                 content-classes="py-1 bg-white dark:bg-gray-800"
                             >
                                 <template #trigger>
@@ -87,6 +86,16 @@ const showingNavigationDropdown = ref(false);
                                 </template>
 
                                 <template #content>
+                                    <div
+                                        class="border-b border-gray-100 px-3 py-3 dark:border-gray-700"
+                                        @click.stop
+                                    >
+                                        <BacklogApiKeyInput
+                                            labeled
+                                            stacked
+                                            input-id="backlog-api-key-nav"
+                                        />
+                                    </div>
                                     <DropdownLink :href="route('project-settings.index')">
                                         Project settings
                                     </DropdownLink>
@@ -163,10 +172,17 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
                     </div>
 
-                    <div class="border-t border-gray-200 px-4 pb-2 pt-3 dark:border-gray-700">
-                        <p class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                    <div class="border-t border-gray-200 px-4 pb-4 pt-3 dark:border-gray-700">
+                        <p class="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                             Settings
                         </p>
+                        <div class="mb-3 px-1">
+                            <BacklogApiKeyInput
+                                labeled
+                                stacked
+                                input-id="backlog-api-key-mobile"
+                            />
+                        </div>
                         <ResponsiveNavLink
                             :href="route('project-settings.index')"
                             :active="
@@ -175,10 +191,6 @@ const showingNavigationDropdown = ref(false);
                         >
                             Project settings
                         </ResponsiveNavLink>
-                    </div>
-
-                    <div class="border-t border-gray-200 px-4 pb-4 pt-4 dark:border-gray-700">
-                        <BacklogApiKeyInput />
                     </div>
                 </div>
             </nav>

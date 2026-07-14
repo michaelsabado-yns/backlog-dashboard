@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\BacklogActivityService;
+use App\Services\BacklogIssueService;
 use App\Services\BacklogNotificationService;
 use App\Services\BacklogProjectService;
 use App\Services\BacklogUserService;
@@ -30,6 +31,7 @@ class DailyHoursTrackerController extends Controller
     public function myIssues(
         Request $request,
         BacklogActivityService $backlogActivityService,
+        BacklogIssueService $backlogIssueService,
         BacklogProjectService $backlogProjectService,
         BacklogUserService $backlogUserService,
         DailyHoursCacheService $dailyHoursCacheService,
@@ -89,8 +91,14 @@ class DailyHoursTrackerController extends Controller
                     'fetched_at' => now()->toIso8601String(),
                 ];
 
+                $items = $this->attachIssueStatuses(
+                    $backlogIssueService,
+                    $apiKey,
+                    is_array($payload['items'] ?? null) ? $payload['items'] : [],
+                );
+
                 return response()->json(array_merge([
-                    'items' => $payload['items'],
+                    'items' => $items,
                     'fetched_at' => $payload['fetched_at'],
                     'date' => $date,
                     'signature' => $signature,
@@ -128,6 +136,8 @@ class DailyHoursTrackerController extends Controller
 
             return strcmp($a['issue_key'], $b['issue_key']);
         });
+
+        $items = $this->attachIssueStatuses($backlogIssueService, $apiKey, $items);
 
         $fetchedAt = now()->toIso8601String();
         $dailyHoursCacheService->put($apiKey, $date, $projectIds, $signature, $items, $timezone, $trackedUserId);
@@ -303,7 +313,45 @@ class DailyHoursTrackerController extends Controller
                 'field_kind' => $change['field_kind'] ?? 'actual_hours',
                 'source' => $change['source'] ?? 'user_activity',
             ], $changes),
+            'issue_status' => null,
+            'issue_status_color' => null,
         ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function attachIssueStatuses(
+        BacklogIssueService $backlogIssueService,
+        string $apiKey,
+        array $items,
+    ): array {
+        if ($items === []) {
+            return [];
+        }
+
+        $statuses = $backlogIssueService->getStatusesByIssueKeys(
+            $apiKey,
+            array_map(
+                static fn (array $item): string => (string) ($item['issue_key'] ?? ''),
+                $items,
+            ),
+        );
+
+        foreach ($items as $index => $item) {
+            $issueKey = (string) ($item['issue_key'] ?? '');
+            $status = $statuses[$issueKey] ?? null;
+
+            $items[$index]['issue_status'] = is_array($status)
+                ? ($status['issue_status'] ?? null)
+                : ($item['issue_status'] ?? null);
+            $items[$index]['issue_status_color'] = is_array($status)
+                ? ($status['issue_status_color'] ?? null)
+                : ($item['issue_status_color'] ?? null);
+        }
+
+        return $items;
     }
 
     private function resolveProjectKeyFromIssueKey(string $issueKey): string

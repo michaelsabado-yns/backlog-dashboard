@@ -3,6 +3,7 @@ import LoadingSpinner from '@/Components/LoadingSpinner.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import WeekdayDatePicker from '@/Components/WeekdayDatePicker.vue';
+import IssueStatusBadge from '@/Components/Notifications/IssueStatusBadge.vue';
 import { useActualHoursHistory } from '@/composables/useActualHoursHistory';
 import {
   getDailyHoursCacheSignature,
@@ -711,6 +712,10 @@ watch(selectedDate, (date, previousDate) => {
                           <span v-else class="text-sm font-semibold text-gray-800 dark:text-gray-200">
                             {{ ticket.issue_key }}
                           </span>
+                          <IssueStatusBadge
+                            :status="ticket.issue_status"
+                            :color="ticket.issue_status_color"
+                          />
                         </div>
 
                         <p class="mt-0.5 line-clamp-2 text-sm leading-snug text-gray-900 dark:text-gray-100">
