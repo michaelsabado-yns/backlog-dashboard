@@ -300,10 +300,8 @@ class DailyHoursTrackerController extends Controller
             'updated_at' => $last['changed_at'],
             'previous_hours' => (float) $first['before'],
             'current_hours' => (float) $last['after'],
-            'worked_hours' => array_sum(array_map(
-                static fn (array $change): float => max(0, (float) $change['after'] - (float) $change['before']),
-                $changes,
-            )),
+            // Net for the day (includes corrections): 0→2 then 2→1 = +1, not +2.
+            'worked_hours' => (float) $last['after'] - (float) $first['before'],
             'hour_changes' => array_map(static fn (array $change): array => [
                 'before' => $change['before'],
                 'after' => $change['after'],

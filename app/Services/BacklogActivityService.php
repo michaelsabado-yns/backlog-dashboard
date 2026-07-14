@@ -379,7 +379,7 @@ class BacklogActivityService
                     'field_kind' => $fieldKind,
                     'before' => $before,
                     'after' => $after,
-                    'worked_hours' => max(0, $after - $before),
+                    'worked_hours' => $after - $before,
                     'changed_at' => $created,
                     'changed_by' => $activity['createdUser']['name'] ?? 'Unknown',
                     'activity_id' => $activity['id'] ?? null,

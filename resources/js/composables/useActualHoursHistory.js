@@ -124,7 +124,7 @@ const computeDailySummary = (issueKey, date) => {
         : toNumber(firstOfDay.actualHours);
 
   const currentHours = toNumber(lastOfDay.actualHours);
-  const workedHours = Math.max(0, currentHours - previousHours);
+  const workedHours = currentHours - previousHours;
   const dayChanges = buildDayChanges(daySnapshots, lastBeforeDay);
 
   return {
