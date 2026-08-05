@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\BacklogActivityService;
+use App\Services\BacklogCommonTaskService;
 use App\Services\BacklogIssueService;
 use App\Services\BacklogNotificationService;
 use App\Services\BacklogProjectService;
@@ -31,6 +32,7 @@ class DailyHoursTrackerController extends Controller
     public function myIssues(
         Request $request,
         BacklogActivityService $backlogActivityService,
+        BacklogCommonTaskService $backlogCommonTaskService,
         BacklogIssueService $backlogIssueService,
         BacklogProjectService $backlogProjectService,
         BacklogUserService $backlogUserService,
@@ -139,11 +141,24 @@ class DailyHoursTrackerController extends Controller
 
         $items = $this->attachIssueStatuses($backlogIssueService, $apiKey, $items);
 
+        $extraItems = [];
+        if ($trackedUserId !== null) {
+            $updatedIssues = $backlogCommonTaskService->getIssuesUpdatedOnDateForUser($apiKey, $projectIds, $date, $timezone, $trackedUser);
+            $existingKeys = array_map(static fn ($item) => $item['issue_key'], $items);
+
+            foreach ($updatedIssues as $issue) {
+                if (! in_array($issue['issue_key'], $existingKeys, true)) {
+                    $extraItems[] = $issue;
+                }
+            }
+        }
+
         $fetchedAt = now()->toIso8601String();
         $dailyHoursCacheService->put($apiKey, $date, $projectIds, $signature, $items, $timezone, $trackedUserId);
 
         return response()->json(array_merge([
             'items' => $items,
+            'extra_items' => $extraItems,
             'fetched_at' => $fetchedAt,
             'date' => $date,
             'signature' => $signature,
@@ -347,6 +362,18 @@ class DailyHoursTrackerController extends Controller
             $items[$index]['issue_status_color'] = is_array($status)
                 ? ($status['issue_status_color'] ?? null)
                 : ($item['issue_status_color'] ?? null);
+            $items[$index]['issue_type'] = is_array($status)
+                ? ($status['issue_type'] ?? null)
+                : ($item['issue_type'] ?? null);
+            $items[$index]['created_user_id'] = is_array($status)
+                ? ($status['created_user_id'] ?? null)
+                : ($item['created_user_id'] ?? null);
+            $items[$index]['created_user_name'] = is_array($status)
+                ? ($status['created_user_name'] ?? null)
+                : ($item['created_user_name'] ?? null);
+            $items[$index]['custom_fields'] = is_array($status)
+                ? ($status['custom_fields'] ?? [])
+                : ($item['custom_fields'] ?? []);
         }
 
         return $items;

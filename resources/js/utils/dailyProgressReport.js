@@ -1,4 +1,12 @@
-const formatReportHours = (hours) => {
+import { extractCommonTaskGroup, formatCommonTaskLines } from './commonTaskProgressReport';
+
+/**
+ * Format worked hours for progress report output (e.g. 1.5h or 2h or 0h).
+ *
+ * @param {number|string|null} hours
+ * @returns {string}
+ */
+export const formatReportHours = (hours) => {
   const value = Number(hours ?? 0);
 
   if (!Number.isFinite(value) || value <= 0) {
@@ -12,7 +20,13 @@ const formatReportHours = (hours) => {
   return `${value.toFixed(2)}h`;
 };
 
-const resolveProjectName = (ticket) => {
+/**
+ * Resolve project name or key for a ticket.
+ *
+ * @param {object} ticket
+ * @returns {string}
+ */
+export const resolveProjectName = (ticket) => {
   if (ticket.project_name) {
     return ticket.project_name;
   }
@@ -26,23 +40,47 @@ const resolveProjectName = (ticket) => {
   return match?.[1] ?? 'Unknown project';
 };
 
-const resolveTicketLabel = (ticket) => {
+/**
+ * Resolve formatted ticket label with issue key, issue type tag, and summary.
+ *
+ * @param {object} ticket
+ * @returns {string}
+ */
+export const resolveTicketLabel = (ticket) => {
   const issueKey = String(ticket.issue_key ?? '').trim();
   const summary = String(ticket.summary ?? '').trim();
+  const issueType = String(ticket.issue_type ?? '').trim();
+
+  let typeTag = issueType ? `[${issueType}]` : '';
+
+  if (typeTag && summary.toLowerCase().includes(typeTag.toLowerCase())) {
+    typeTag = '';
+  } else if (typeTag && summary.startsWith('[')) {
+    const match = summary.match(/^\[([^\]]+)\]/);
+    if (match) {
+      const existingTag = match[1].toLowerCase();
+      const typeLower = issueType.toLowerCase();
+      if (existingTag === typeLower || existingTag.includes(typeLower) || typeLower.includes(existingTag)) {
+        typeTag = '';
+      }
+    }
+  }
+
+  const formattedTypeTag = typeTag ? ` ${typeTag}` : '';
 
   if (issueKey === '') {
     return summary || 'Unknown ticket';
   }
 
   if (summary === '' || summary === issueKey) {
-    return issueKey;
+    return `${issueKey}${formattedTypeTag}`;
   }
 
   if (summary.startsWith(`${issueKey} `) || summary.startsWith(`${issueKey}-`)) {
-    return summary;
+    return `${summary}${formattedTypeTag}`;
   }
 
-  return `${issueKey} ${summary}`;
+  return `${issueKey}${formattedTypeTag} ${summary}`;
 };
 
 /**
@@ -53,9 +91,15 @@ const resolveTicketLabel = (ticket) => {
  *   project_key?: string,
  *   project_name?: string,
  *   updated_at?: string,
+ *   issue_type?: string,
+ *   created_user_id?: number|string,
+ *   custom_fields?: Array<any>,
  * }>} tickets
+ * @param {{
+ *   trackedUserId?: number|string,
+ * }} options
  */
-export function buildDailyProgressReport(tickets) {
+export function buildDailyProgressReport(tickets, options = {}) {
   if (!Array.isArray(tickets) || tickets.length === 0) {
     return '';
   }
@@ -63,7 +107,8 @@ export function buildDailyProgressReport(tickets) {
   const grouped = new Map();
 
   tickets.forEach((ticket) => {
-    const projectName = resolveProjectName(ticket);
+    const rawProjectName = resolveProjectName(ticket);
+    const projectName = String(rawProjectName).charAt(0).toUpperCase() + String(rawProjectName).slice(1).toLowerCase();
 
     if (!grouped.has(projectName)) {
       grouped.set(projectName, []);
@@ -74,17 +119,20 @@ export function buildDailyProgressReport(tickets) {
 
   const lines = ['Progress:', ''];
   const projectNames = [...grouped.keys()].sort((a, b) => a.localeCompare(b));
+  const trackedUserId = options.trackedUserId ?? null;
 
   projectNames.forEach((projectName, projectIndex) => {
-    if (projectIndex > 0) {
-      lines.push('');
-    }
-
     lines.push(projectName);
 
-    grouped.get(projectName).forEach((ticket) => {
+    const projectTickets = grouped.get(projectName);
+    const group = extractCommonTaskGroup(projectTickets, trackedUserId);
+
+    group.directChangesTickets.forEach((ticket) => {
       lines.push(`* ${resolveTicketLabel(ticket)} - ${formatReportHours(ticket.worked_hours)}`);
     });
+
+    const commonTaskLines = formatCommonTaskLines(group, formatReportHours, resolveTicketLabel);
+    lines.push(...commonTaskLines);
   });
 
   return lines.join('\n');

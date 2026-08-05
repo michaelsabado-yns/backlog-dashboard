@@ -175,9 +175,42 @@ class BacklogActivityService
     }
 
     /**
+     * Fetch raw activities for a user on a specific date.
+     *
      * @return array<int, array<string, mixed>>
      */
-    private function fetchLatestActivities(string $apiKey, int $userId): array
+    public function getUserActivitiesForDate(string $apiKey, int $userId, string $date, string $timezone): array
+    {
+        $activities = $this->fetchLatestActivities($apiKey, $userId, [1, 2, 3, 14]);
+        $targetDate = substr($date, 0, 10);
+        $matched = [];
+
+        foreach ($activities as $activity) {
+            $created = $activity['created'] ?? null;
+
+            if (! is_string($created) || $created === '') {
+                continue;
+            }
+
+            try {
+                $createdDate = Carbon::parse($created)->timezone($timezone)->toDateString();
+            } catch (\Exception $e) {
+                $createdDate = substr($created, 0, 10);
+            }
+
+            if ($createdDate === $targetDate) {
+                $matched[] = $activity;
+            }
+        }
+
+        return $matched;
+    }
+
+    /**
+     * @param  array<int, int>|null  $activityTypeIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchLatestActivities(string $apiKey, int $userId, ?array $activityTypeIds = null): array
     {
         $response = Http::get(
             rtrim((string) config('backlog.url'), '/').'/api/v2/users/'.$userId.'/activities',
@@ -185,7 +218,7 @@ class BacklogActivityService
                 'apiKey' => $apiKey,
                 'count' => 100,
                 'order' => 'desc',
-                'activityTypeId' => self::ISSUE_UPDATE_TYPES,
+                'activityTypeId' => $activityTypeIds ?? self::ISSUE_UPDATE_TYPES,
             ],
         );
 

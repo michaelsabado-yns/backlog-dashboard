@@ -125,10 +125,38 @@ class BacklogIssueService
     }
 
     /**
-     * Fetch current status (name + color) for the given issue keys.
+     * Fetch a single issue by its key (e.g. "BIGVISION-430").
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getIssueByKey(string $apiKey, string $issueKey): ?array
+    {
+        $trimmedApiKey = trim($apiKey);
+        $trimmedKey = trim($issueKey);
+
+        if ($trimmedApiKey === '' || $trimmedKey === '') {
+            return null;
+        }
+
+        $baseUrl = rtrim((string) config('backlog.url'), '/');
+        $response = Http::get($baseUrl.'/api/v2/issues/'.$trimmedKey, [
+            'apiKey' => $trimmedApiKey,
+        ]);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $payload = $response->json();
+
+        return is_array($payload) && isset($payload['id']) ? $payload : null;
+    }
+
+    /**
+     * Fetch current status and metadata for the given issue keys.
      *
      * @param  array<int, string>  $issueKeys
-     * @return array<string, array{issue_status: string|null, issue_status_color: string|null}>
+     * @return array<string, array{issue_status: string|null, issue_status_color: string|null, issue_type: string|null, created_user_id: int|null, created_user_name: string|null, custom_fields: array}>
      */
     public function getStatusesByIssueKeys(string $apiKey, array $issueKeys): array
     {
@@ -149,29 +177,30 @@ class BacklogIssueService
 
         $statuses = [];
 
-        foreach (array_chunk($uniqueKeys, 100) as $chunk) {
-            $issues = $this->fetchAllIssues($trimmedApiKey, [
-                'issueKey' => $chunk,
-            ]);
+        foreach ($uniqueKeys as $issueKey) {
+            $issue = $this->getIssueByKey($trimmedApiKey, $issueKey);
 
-            foreach ($issues as $issue) {
-                $issueKey = $issue['issueKey'] ?? null;
-
-                if (! is_string($issueKey) || $issueKey === '') {
-                    continue;
-                }
-
-                $status = is_array($issue['status'] ?? null) ? $issue['status'] : [];
-
-                $statuses[$issueKey] = [
-                    'issue_status' => is_string($status['name'] ?? null) ? $status['name'] : null,
-                    'issue_status_color' => is_string($status['color'] ?? null) ? $status['color'] : null,
-                ];
+            if ($issue === null) {
+                continue;
             }
+
+            $status = is_array($issue['status'] ?? null) ? $issue['status'] : [];
+            $issueType = is_array($issue['issueType'] ?? null) ? $issue['issueType'] : [];
+            $createdUser = is_array($issue['createdUser'] ?? null) ? $issue['createdUser'] : [];
+
+            $statuses[$issueKey] = [
+                'issue_status' => is_string($status['name'] ?? null) ? $status['name'] : null,
+                'issue_status_color' => is_string($status['color'] ?? null) ? $status['color'] : null,
+                'issue_type' => is_string($issueType['name'] ?? null) ? $issueType['name'] : null,
+                'created_user_id' => isset($createdUser['id']) ? (int) $createdUser['id'] : null,
+                'created_user_name' => is_string($createdUser['name'] ?? null) ? $createdUser['name'] : null,
+                'custom_fields' => is_array($issue['customFields'] ?? null) ? $issue['customFields'] : [],
+            ];
         }
 
         return $statuses;
     }
+
 
     /**
      * @param  array<string, mixed>  $baseFilters
@@ -382,7 +411,7 @@ class BacklogIssueService
      * @param  array<string, array<int, int>|string>  $filters
      * @return array<int, array<string, mixed>>
      */
-    private function fetchAllIssues(string $apiKey, array $filters): array
+    public function fetchAllIssues(string $apiKey, array $filters): array
     {
         $baseUrl = rtrim((string) config('backlog.url'), '/');
         $offset = 0;

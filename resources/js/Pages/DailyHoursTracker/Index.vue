@@ -49,6 +49,7 @@ const loading = ref(false);
 const refreshing = ref(false);
 const fetchedAt = ref(null);
 const fetchedTickets = ref([]);
+const fetchedExtraTickets = ref([]);
 const loadError = ref(null);
 const fromCache = ref(false);
 const changeCount = ref(0);
@@ -123,11 +124,16 @@ const displayTickets = computed(() =>
   }),
 );
 
+const ticketCount = computed(() => displayTickets.value.length);
 const totalHours = computed(() =>
   displayTickets.value.reduce((sum, ticket) => sum + Number(ticket.worked_hours ?? 0), 0),
 );
-const ticketCount = computed(() => displayTickets.value.length);
-const progressReportText = computed(() => buildDailyProgressReport(displayTickets.value));
+const progressReportText = computed(() => buildDailyProgressReport([
+  ...displayTickets.value,
+  ...fetchedExtraTickets.value,
+], {
+  trackedUserId: trackedUserId.value,
+}));
 
 const copyProgressReport = async () => {
   const text = progressReportText.value;
@@ -210,6 +216,7 @@ const applyCachedDay = (date) => {
 
   if (!cached) {
     fetchedTickets.value = [];
+    fetchedExtraTickets.value = [];
     fetchedAt.value = null;
     fromCache.value = false;
     signature.value = null;
@@ -217,6 +224,7 @@ const applyCachedDay = (date) => {
   }
 
   fetchedTickets.value = cached.items;
+  fetchedExtraTickets.value = cached.extra_items ?? [];
   fetchedAt.value = cached.fetchedAt;
   fromCache.value = true;
   signature.value = cached.signature;
@@ -250,6 +258,7 @@ const persistSnapshots = (items) => {
 const snapshotMyIssues = async ({ force = false } = {}) => {
   if (!hasProjectSelection.value) {
     fetchedTickets.value = [];
+    fetchedExtraTickets.value = [];
     fetchedAt.value = null;
     fromCache.value = false;
     changeCount.value = 0;
@@ -277,20 +286,25 @@ const snapshotMyIssues = async ({ force = false } = {}) => {
 
   const data = response?.data ?? {};
   let items = Array.isArray(data.items) ? data.items : [];
+  let extraItems = Array.isArray(data.extra_items) ? data.extra_items : [];
 
   if (data.from_cache && items.length === 0 && data.signature) {
     const localCache = loadDailyHoursCache(selectedDate.value, projectIds, browserTimezone, trackedUserId.value);
 
     if (localCache?.signature === data.signature && localCache.items.length > 0) {
       items = localCache.items;
+      extraItems = localCache.extra_items ?? [];
     }
   }
 
+  const { fetched_at: fetchedAtTime, signature: sig } = data;
+
   fetchedTickets.value = items;
-  fetchedAt.value = data.fetched_at ?? new Date().toISOString();
+  fetchedExtraTickets.value = extraItems;
+  fetchedAt.value = fetchedAtTime ?? new Date().toISOString();
   fromCache.value = Boolean(data.from_cache);
   changeCount.value = Number(data.change_count ?? 0);
-  signature.value = data.signature ?? null;
+  signature.value = sig ?? null;
   scopedProjectIds.value = Array.isArray(data.scoped_project_ids) ? data.scoped_project_ids : [];
   beforeHistory.value = Boolean(data.before_history);
   dateReachable.value = data.date_reachable !== false;
@@ -314,8 +328,9 @@ const snapshotMyIssues = async ({ force = false } = {}) => {
     projectIds,
     {
       items,
-      fetched_at: fetchedAt.value,
-      signature: signature.value,
+      extra_items: fetchedExtraTickets.value,
+      fetched_at: fetchedAtTime,
+      signature: sig,
     },
     browserTimezone,
     trackedUserId.value,
@@ -643,7 +658,7 @@ watch(selectedDate, (date, previousDate) => {
                     {{ showProgressReport ? 'Hide report' : 'Progress report' }}
                   </SecondaryButton>
                   <SecondaryButton
-                    v-if="displayTickets.length > 0"
+                    v-if="displayTickets.length > 0 && showProgressReport"
                     type="button"
                     class="normal-case tracking-normal"
                     @click="copyProgressReport"

@@ -57,6 +57,7 @@ export function loadDailyHoursCache(date, projectIds = null, timezone = null, us
 
   return {
     items: entry.items,
+    extra_items: entry.extra_items ?? [],
     fetchedAt: entry.fetched_at ?? null,
     signature: entry.signature ?? null,
     fromCache: true,
@@ -69,6 +70,7 @@ export function saveDailyHoursCache(date, projectIds, payload, timezone = null, 
 
   store[cacheKey] = {
     items: Array.isArray(payload.items) ? payload.items : [],
+    extra_items: Array.isArray(payload.extra_items) ? payload.extra_items : [],
     fetched_at: payload.fetched_at ?? null,
     signature: payload.signature ?? null,
   };
