@@ -44,6 +44,15 @@ class BacklogCustomFieldDetectionTest extends TestCase
                     ['id' => 11, 'typeId' => 5, 'name' => 'サブ担当', 'items' => []],
                     ['id' => 20, 'typeId' => 5, 'name' => 'QA In Charge', 'items' => []],
                     ['id' => 21, 'typeId' => 5, 'name' => 'Sub QA In Charge', 'items' => []],
+                    ['id' => 30, 'typeId' => 5, 'name' => 'Reviewer', 'items' => []],
+                    ['id' => 31, 'typeId' => 5, 'name' => 'Sub Reviewer', 'items' => []],
+                ]);
+            }
+
+            if ($path === '/api/v2/projects/QA/statuses') {
+                return Http::response([
+                    ['id' => 1, 'name' => 'Open', 'color' => '#ed8077', 'displayOrder' => 1000],
+                    ['id' => 2, 'name' => 'In Progress', 'color' => '#4488c5', 'displayOrder' => 2000],
                 ]);
             }
 
@@ -61,6 +70,55 @@ class BacklogCustomFieldDetectionTest extends TestCase
         $this->assertSame('Sub QA In Charge', $project['sub_qa_in_charge_fields'][0]['name']);
         $this->assertSame('qa_in_charge', $project['qa_in_charge_field']['role']);
         $this->assertSame('sub_qa_in_charge', $project['sub_qa_in_charge_fields'][0]['role']);
+        $this->assertSame('Reviewer', $project['reviewer_field']['name']);
+        $this->assertSame('Sub Reviewer', $project['sub_reviewer_fields'][0]['name']);
+        $this->assertSame('reviewer', $project['reviewer_field']['role']);
+        $this->assertSame('sub_reviewer', $project['sub_reviewer_fields'][0]['role']);
+        $this->assertCount(2, $project['statuses']);
+        $this->assertSame('Open', $project['statuses'][0]['name']);
+    }
+
+    public function test_project_service_merges_status_columns_by_name(): void
+    {
+        Http::fake(function ($request) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+
+            if ($path === '/api/v2/projects') {
+                return Http::response([
+                    ['id' => 1, 'projectKey' => 'A', 'name' => 'Project A', 'archived' => false],
+                    ['id' => 2, 'projectKey' => 'B', 'name' => 'Project B', 'archived' => false],
+                ]);
+            }
+
+            if (str_ends_with((string) $path, '/users') || str_ends_with((string) $path, '/customFields')) {
+                return Http::response([]);
+            }
+
+            if ($path === '/api/v2/projects/A/statuses') {
+                return Http::response([
+                    ['id' => 1, 'name' => 'Open', 'color' => '#ed8077', 'displayOrder' => 1000],
+                    ['id' => 2, 'name' => 'In Progress', 'color' => '#4488c5', 'displayOrder' => 2000],
+                ]);
+            }
+
+            if ($path === '/api/v2/projects/B/statuses') {
+                return Http::response([
+                    ['id' => 11, 'name' => 'open', 'color' => '#ff0000', 'displayOrder' => 500],
+                    ['id' => 12, 'name' => 'Review', 'color' => '#7c3aed', 'displayOrder' => 3000],
+                ]);
+            }
+
+            return Http::response([], 404);
+        });
+
+        $columns = (new BacklogProjectService)->getMergedStatusColumns('test-key');
+
+        $this->assertCount(3, $columns);
+        $this->assertSame('open', $columns[0]['key']);
+        $this->assertSame('Open', $columns[0]['name']);
+        $this->assertSame('#ed8077', $columns[0]['color']);
+        $this->assertSame('In Progress', $columns[1]['name']);
+        $this->assertSame('Review', $columns[2]['name']);
     }
 
     public function test_activity_service_classifies_qa_hour_changes(): void

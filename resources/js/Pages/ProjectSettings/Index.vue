@@ -121,6 +121,14 @@ const fieldRoleLabel = (role) => {
     return 'Sub QA in charge';
   }
 
+  if (role === 'reviewer') {
+    return 'Reviewer';
+  }
+
+  if (role === 'sub_reviewer') {
+    return 'Sub reviewer';
+  }
+
   return 'Unassigned';
 };
 
@@ -135,8 +143,12 @@ const roleSummary = (project) => {
     parts.push(`QA: ${project.qa_in_charge_field.name}`);
   }
 
+  if (project.reviewer_field) {
+    parts.push(`Reviewer: ${project.reviewer_field.name}`);
+  }
+
   if (parts.length === 0) {
-    return 'No PIC/QA fields detected';
+    return 'No PIC/QA/Reviewer fields detected';
   }
 
   return parts.join(' · ');
@@ -346,6 +358,17 @@ onMounted(async () => {
                         <p class="mt-0.5">
                           {{
                             project.sub_qa_in_charge_fields
+                              .map((field) => `${field.name} (${field.id})`)
+                              .join(', ')
+                          }}
+                        </p>
+                      </div>
+
+                      <div v-if="project.sub_reviewer_fields?.length">
+                        <p class="font-medium text-gray-700 dark:text-gray-300">Sub Reviewer fields</p>
+                        <p class="mt-0.5">
+                          {{
+                            project.sub_reviewer_fields
                               .map((field) => `${field.name} (${field.id})`)
                               .join(', ')
                           }}

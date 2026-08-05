@@ -50,6 +50,25 @@ class BacklogProjectService
         '/sub[\s_-]*qa$/i',
     ];
 
+    private const REVIEWER_PATTERNS = [
+        '/^reviewer$/i',
+        '/^レビュアー$/u',
+        '/^レビュー担当$/u',
+        '/^レビュー担当者$/u',
+        '/reviewer/i',
+        '/レビュー担当/u',
+    ];
+
+    private const SUB_REVIEWER_PATTERNS = [
+        '/^sub reviewer$/i',
+        '/^サブレビュアー$/u',
+        '/^副レビュアー$/u',
+        '/^副レビュー$/u',
+        '/sub[\s_-]*reviewer/i',
+        '/サブレビュアー/u',
+        '/副レビュー/u',
+    ];
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -125,6 +144,8 @@ class BacklogProjectService
             $detectedFields = $this->detectFieldRoles($customFields);
             $customFieldsWithRoles = $this->attachRolesToFields($customFields);
 
+            $statuses = $this->fetchProjectStatuses($baseUrl, $apiKey, $projectKey);
+
             $projects[] = [
                 'id' => $projectId,
                 'project_key' => $projectKey,
@@ -133,11 +154,14 @@ class BacklogProjectService
                 'member_count' => count($members),
                 'members' => $members,
                 'custom_fields' => $customFieldsWithRoles,
-                'uses_standard_assignee' => false,
+                'statuses' => $statuses,
+                'uses_standard_assignee' => true,
                 'person_in_charge_field' => $detectedFields['person_in_charge'],
                 'sub_person_in_charge_fields' => $detectedFields['sub_person_in_charge'],
                 'qa_in_charge_field' => $detectedFields['qa_in_charge'],
                 'sub_qa_in_charge_fields' => $detectedFields['sub_qa_in_charge'],
+                'reviewer_field' => $detectedFields['reviewer'],
+                'sub_reviewer_fields' => $detectedFields['sub_reviewer'],
             ];
         }
 
@@ -174,6 +198,128 @@ class BacklogProjectService
         }
 
         return $members;
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, color: string|null, display_order: int}>
+     */
+    private function fetchProjectStatuses(string $baseUrl, string $apiKey, string $projectKey): array
+    {
+        $response = Http::get($baseUrl.'/api/v2/projects/'.$projectKey.'/statuses', [
+            'apiKey' => $apiKey,
+        ]);
+
+        if (! $response->successful()) {
+            return [];
+        }
+
+        $statuses = [];
+
+        foreach ($response->json() ?? [] as $status) {
+            if (! isset($status['id'])) {
+                continue;
+            }
+
+            $name = is_string($status['name'] ?? null) ? $status['name'] : '';
+
+            if ($name === '') {
+                continue;
+            }
+
+            $statuses[] = [
+                'id' => (int) $status['id'],
+                'name' => $name,
+                'color' => is_string($status['color'] ?? null) ? $status['color'] : null,
+                'display_order' => isset($status['displayOrder']) ? (int) $status['displayOrder'] : 0,
+            ];
+        }
+
+        usort(
+            $statuses,
+            static fn (array $a, array $b): int => $a['display_order'] <=> $b['display_order']
+                ?: strcmp($a['name'], $b['name']),
+        );
+
+        return $statuses;
+    }
+
+    /**
+     * Merge status catalogs from selected projects by normalized status name.
+     *
+     * @param  array<int, int>|null  $projectIds
+     * @return array<int, array{key: string, name: string, color: string|null, display_order: int}>
+     */
+    public function getMergedStatusColumns(string $apiKey, ?array $projectIds = null): array
+    {
+        $projects = $this->getProjectMappings($apiKey, $projectIds);
+
+        /** @var array<string, array{key: string, name: string, color: string|null, orders: array<int, int>}> $byKey */
+        $byKey = [];
+
+        foreach ($projects as $project) {
+            if (($project['archived'] ?? false) === true) {
+                continue;
+            }
+
+            foreach ($project['statuses'] ?? [] as $status) {
+                if (! is_array($status)) {
+                    continue;
+                }
+
+                $name = trim((string) ($status['name'] ?? ''));
+
+                if ($name === '') {
+                    continue;
+                }
+
+                $key = mb_strtolower($name);
+
+                if (! isset($byKey[$key])) {
+                    $byKey[$key] = [
+                        'key' => $key,
+                        'name' => $name,
+                        'color' => is_string($status['color'] ?? null) && $status['color'] !== ''
+                            ? $status['color']
+                            : null,
+                        'orders' => [],
+                    ];
+                }
+
+                if (
+                    ($byKey[$key]['color'] === null || $byKey[$key]['color'] === '')
+                    && is_string($status['color'] ?? null)
+                    && $status['color'] !== ''
+                ) {
+                    $byKey[$key]['color'] = $status['color'];
+                }
+
+                $byKey[$key]['orders'][] = (int) ($status['display_order'] ?? 0);
+            }
+        }
+
+        $columns = [];
+
+        foreach ($byKey as $column) {
+            $orders = $column['orders'];
+            $avgOrder = $orders === []
+                ? 0
+                : (int) round(array_sum($orders) / count($orders));
+
+            $columns[] = [
+                'key' => $column['key'],
+                'name' => $column['name'],
+                'color' => $column['color'],
+                'display_order' => $avgOrder,
+            ];
+        }
+
+        usort(
+            $columns,
+            static fn (array $a, array $b): int => $a['display_order'] <=> $b['display_order']
+                ?: strcmp($a['name'], $b['name']),
+        );
+
+        return $columns;
     }
 
     /**
@@ -222,12 +368,13 @@ class BacklogProjectService
 
     /**
      * @param  array<int, array<string, mixed>>  $customFields
-     * @param  array<int, int>  $configuredSubFieldIds
      * @return array{
      *     person_in_charge: array<string, mixed>|null,
      *     sub_person_in_charge: array<int, array<string, mixed>>,
      *     qa_in_charge: array<string, mixed>|null,
-     *     sub_qa_in_charge: array<int, array<string, mixed>>
+     *     sub_qa_in_charge: array<int, array<string, mixed>>,
+     *     reviewer: array<string, mixed>|null,
+     *     sub_reviewer: array<int, array<string, mixed>>
      * }
      */
     private function detectFieldRoles(array $customFields): array
@@ -236,6 +383,8 @@ class BacklogProjectService
         $subFields = [];
         $qaInCharge = null;
         $subQaFields = [];
+        $reviewer = null;
+        $subReviewerFields = [];
 
         foreach ($customFields as $field) {
             $name = (string) $field['name'];
@@ -257,6 +406,14 @@ class BacklogProjectService
             if ($role === 'sub_qa_in_charge') {
                 $subQaFields[] = $fieldWithRole;
             }
+
+            if ($role === 'reviewer' && $reviewer === null) {
+                $reviewer = $fieldWithRole;
+            }
+
+            if ($role === 'sub_reviewer') {
+                $subReviewerFields[] = $fieldWithRole;
+            }
         }
 
         return [
@@ -264,6 +421,8 @@ class BacklogProjectService
             'sub_person_in_charge' => $subFields,
             'qa_in_charge' => $qaInCharge,
             'sub_qa_in_charge' => $subQaFields,
+            'reviewer' => $reviewer,
+            'sub_reviewer' => $subReviewerFields,
         ];
     }
 
@@ -282,12 +441,20 @@ class BacklogProjectService
 
     private function resolveFieldRole(string $name): ?string
     {
+        if ($this->matchesSubReviewerName($name)) {
+            return 'sub_reviewer';
+        }
+
         if ($this->matchesSubQaInChargeName($name)) {
             return 'sub_qa_in_charge';
         }
 
         if ($this->matchesSubAssigneeName($name)) {
             return 'sub_person_in_charge';
+        }
+
+        if ($this->matchesReviewerName($name)) {
+            return 'reviewer';
         }
 
         if ($this->matchesQaInChargeName($name)) {
@@ -357,6 +524,32 @@ class BacklogProjectService
         }
 
         foreach (self::SUB_QA_PATTERNS as $pattern) {
+            if (preg_match($pattern, $name) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function matchesReviewerName(string $name): bool
+    {
+        if (preg_match('/サブ|副|sub/ui', $name) === 1) {
+            return false;
+        }
+
+        foreach (self::REVIEWER_PATTERNS as $pattern) {
+            if (preg_match($pattern, $name) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function matchesSubReviewerName(string $name): bool
+    {
+        foreach (self::SUB_REVIEWER_PATTERNS as $pattern) {
             if (preg_match($pattern, $name) === 1) {
                 return true;
             }

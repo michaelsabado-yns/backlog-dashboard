@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BoardController;
 use App\Http\Controllers\DailyHoursTrackerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -61,6 +62,10 @@ Route::middleware([])->group(function () {
         ->name('daily-hours.date-bounds');
     Route::get('/daily-hours/notifications', [DailyHoursTrackerController::class, 'notifications'])
         ->name('daily-hours.notifications');
+    Route::get('/board', [BoardController::class, 'index'])
+        ->name('board.index');
+    Route::get('/board/issues', [BoardController::class, 'issues'])
+        ->name('board.issues');
     Route::get('/project-settings', [ProjectSettingsController::class, 'index'])
         ->name('project-settings.index');
     Route::get('/project-settings/projects', [ProjectSettingsController::class, 'projects'])
